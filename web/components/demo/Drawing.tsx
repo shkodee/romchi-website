@@ -137,11 +137,19 @@ const Drawing = forwardRef<SVGSVGElement, Props>(function Drawing({ s, ariaLabel
 
   return (
     <svg ref={ref} viewBox="0 0 460 420" role="img" aria-label={ariaLabel} className="h-auto max-h-[480px] w-full select-none" style={{ fontFamily: 'Manrope, sans-serif' }}>
-      <path d={outline} fill={C.c} stroke={C.st} strokeWidth={1} />
+      {C.tex && (
+        <defs>
+          <pattern id="prof-tex" patternUnits="userSpaceOnUse" width={64} height={64}>
+            <rect width={64} height={64} fill={C.c} />
+            <image href={C.tex} width={64} height={64} preserveAspectRatio="xMidYMid slice" />
+          </pattern>
+        </defs>
+      )}
+      <path d={outline} fill={C.tex ? 'url(#prof-tex)' : C.c} stroke={C.st} strokeWidth={1} />
       {parts.map((p) => (
         <g key={p.i}>
-          <rect x={r1(p.sash.x)} y={r1(p.sash.y)} width={r1(p.sash.w)} height={r1(p.sash.h)} fill={p.open ? C.sash : C.c} stroke={C.st} strokeWidth={1} />
-          {p.panel && <rect x={p.panel.x} y={p.panel.y} width={p.panel.w} height={p.panel.h} fill={C.panel} stroke={C.st} strokeWidth={1} />}
+          <rect x={r1(p.sash.x)} y={r1(p.sash.y)} width={r1(p.sash.w)} height={r1(p.sash.h)} fill={C.tex ? 'url(#prof-tex)' : p.open ? C.sash : C.c} stroke={C.st} strokeWidth={1} />
+          {p.panel && <rect x={p.panel.x} y={p.panel.y} width={p.panel.w} height={p.panel.h} fill={C.tex ? 'url(#prof-tex)' : C.panel} stroke={C.st} strokeWidth={1} />}
           <rect
             x={p.g.x} y={p.g.y} width={p.g.w} height={p.g.h}
             fill="#4DD0FF"

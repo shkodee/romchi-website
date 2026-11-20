@@ -35,7 +35,7 @@ export default function Demo({ t, lang, rate = DEFAULT_RATE, compact = false }: 
   const r = useMemo(() => compute(s), [s]);
   const tname = t.tpl[s.tpl];
   const pname = PROFILES[s.prof].n;
-  const cname = t.cols[s.col];
+  const cname = COLORS[s.col].n;
   const uzs = fmt(r.totalUsd * rate);
 
   const pickTpl = (id: TplId) => {
@@ -88,7 +88,7 @@ export default function Demo({ t, lang, rate = DEFAULT_RATE, compact = false }: 
     // в PDF — чистый чертёж без кнопок редактирования
     const clone = svgRef.current?.cloneNode(true) as SVGSVGElement | undefined;
     clone?.querySelectorAll('[data-ui]').forEach((el) => el.remove());
-    const svg = clone?.outerHTML ?? '';
+    const svg = (clone?.outerHTML ?? '').replace(/href="\/colors\//g, `href="${window.location.origin}/colors/`);
     const date = new Date().toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'uz-UZ');
     const html = `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><title>${t.pdfTitle}</title>
 <style>@page{size:A4;margin:16mm}body{font-family:Manrope,Arial,sans-serif;color:#0B1530;margin:0}
@@ -185,15 +185,29 @@ h1{font-size:22px;margin:0 0 4px}.m{color:#5B6478;font-size:13px;margin:0 0 18px
             </div>
           </fieldset>
           <fieldset className="m-0 border-0 p-0">
-            <legend className="mb-2.5 p-0 text-sm font-bold text-[#3B4558]">{t.color}</legend>
-            <div className="flex flex-wrap gap-2">
-              {(Object.keys(COLORS) as ColId[]).map((id) => (
-                <button key={id} type="button" aria-pressed={id === s.col} className={chipCls(id === s.col)}
-                  onClick={() => { setS((p) => ({ ...p, col: id })); track('demo_color', { col: id }); }}>
-                  <span aria-hidden="true" className="mr-2 inline-block h-3 w-3 rounded-full align-[-1px] ring-1 ring-black/15" style={{ background: COLORS[id].c }} />
-                  {t.cols[id]}
-                </button>
-              ))}
+            <legend className="mb-2.5 flex w-full flex-wrap items-baseline justify-between gap-x-3 p-0 text-sm font-bold text-[#3B4558]">
+              <span>{t.color}</span>
+              <span className="text-[13px] font-extrabold text-brand-deep">{cname}</span>
+            </legend>
+            <div className="grid grid-cols-6 gap-2 sm:grid-cols-9 lg:grid-cols-6">
+              {(Object.keys(COLORS) as ColId[]).map((id) => {
+                const c = COLORS[id];
+                const on = id === s.col;
+                return (
+                  <button
+                    key={id} type="button" aria-pressed={on} aria-label={c.n} title={c.n}
+                    onClick={() => { setS((p) => ({ ...p, col: id })); track('demo_color', { col: id }); }}
+                    className={`swatch focus-ring relative aspect-square min-h-[44px] rounded-xl ring-1 ring-black/10 transition-[box-shadow,transform] duration-150 ${on ? 'shadow-[0_0_0_2px_#fff,0_0_0_4px_#0077FF]' : ''}`}
+                    style={{ backgroundColor: c.c, backgroundImage: c.tex ? `url(${c.tex})` : undefined, backgroundSize: 'cover' }}
+                  >
+                    {on && (
+                      <svg aria-hidden="true" viewBox="0 0 20 20" className="absolute inset-0 m-auto h-5 w-5 drop-shadow-[0_1px_2px_rgba(0,0,0,.45)]">
+                        <path d="M5 10.5l3.2 3.2L15 7" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </fieldset>
           <fieldset className="m-0 border-0 p-0">

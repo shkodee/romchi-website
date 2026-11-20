@@ -75,3 +75,6 @@ body { background: #F3F6FC; color: #0B1530; }
 .dim-btn:active .dim-pill, .eq-dot:active .eq-ring { fill: #CFE4FF; }
 input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type=number] { -moz-appearance: textfield; }
+
+@media (hover: hover) { .swatch:hover { transform: translateY(-1px); } }
+.swatch:active { transform: scale(.96); }

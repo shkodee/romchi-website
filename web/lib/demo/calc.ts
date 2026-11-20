@@ -5,7 +5,6 @@
 export type OpenType = 'turn' | 'tilt' | 'turntilt' | 'fix';
 export type TplId = 'd1' | 'd2' | 'd3' | 'bb' | 'es' | 'ar';
 export type ProfId = 'akfa' | 'alutex';
-export type ColId = 'oq' | 'ant' | 'lam';
 
 export interface Template {
   id: TplId;
@@ -32,12 +31,44 @@ export const PROFILES: Record<ProfId, { n: string; r: number }> = {
   alutex: { n: 'Alutex', r: 6.2 },
 };
 
-/** k — коэффициент цены за цвет; остальное — цвета для чертежа */
-export const COLORS: Record<ColId, { k: number; c: string; st: string; sash: string; panel: string }> = {
-  oq: { k: 1, c: '#F4F6F9', st: '#9AA6B6', sash: '#FBFCFD', panel: '#E6EAF0' },
-  ant: { k: 1.22, c: '#464A52', st: '#2B2E34', sash: '#4D525B', panel: '#5A606A' },
-  lam: { k: 1.18, c: '#7A4E2D', st: '#4E311C', sash: '#855835', panel: '#94653F' },
+/** Цвета профиля — ассортимент из приложения Romchi (экран «Все цвета профиля», 17 шт.) + базовый белый.
+ *  tex — текстура (вырезана из скриншотов приложения), avg — средний цвет текстуры.
+ *  k — коэффициент цены (ДЕМО: все ламинации одинаково, пока нет реальных цен). */
+const LAM: [id: string, n: string, avg: string][] = [
+  ['c01', 'Zal-dub', '#826748'],
+  ['c02', 'Dub mokko 2048', '#76665B'],
+  ['c03', 'Alyuks antrasit 1012', '#526285'],
+  ['c04', 'Antratsit (nomi aniqlanadi)', '#4D515B'], // TODO: на скриншоте 4/17 нет названия
+  ['c05', 'Metbrash seriy 1006', '#637392'],
+  ['c06', 'Orex 2012', '#7A6E60'],
+  ['c07', 'Sheffildskiy betoniy dub 3003', '#758298'],
+  ['c08', 'Sheffildskiy vicokogorniy dub 3002', '#9EAEC8'],
+  ['c09', 'Ternoviy orex 9036', '#856E63'],
+  ['c10', 'Vinchester 3077', '#B49574'],
+  ['c11', 'Matteks antrasit 6003', '#5C6D91'],
+  ['c12', 'Metbrash platin 1004', '#99A9C3'],
+  ['c13', 'Metbrash kvarz', '#8092AF'],
+  ['c14', 'Svetliy dub 2025', '#C4B294'],
+  ['c15', 'Sheffildskiy seriy dub 5F01', '#9399A8'],
+  ['c16', 'Solodoviy dub 3001', '#D5B586'],
+  ['c17', 'Painted Coal grey', '#131B1D'],
+];
+
+const shade = (hex: string, f: number) => {
+  const n = parseInt(hex.slice(1), 16);
+  const ch = (v: number) => Math.max(0, Math.min(255, Math.round(f < 0 ? v * (1 + f) : v + (255 - v) * f)));
+  return '#' + [n >> 16, (n >> 8) & 255, n & 255].map((v) => ch(v).toString(16).padStart(2, '0')).join('');
 };
+
+export interface ColorDef { n: string; k: number; c: string; st: string; sash: string; panel: string; tex?: string }
+
+export const COLORS: Record<string, ColorDef> = {
+  oq: { n: 'Oq', k: 1, c: '#F4F6F9', st: '#9AA6B6', sash: '#FBFCFD', panel: '#E6EAF0' },
+  ...Object.fromEntries(
+    LAM.map(([id, n, avg]) => [id, { n, k: 1.18, c: avg, st: shade(avg, -0.45), sash: shade(avg, 0.08), panel: shade(avg, 0.15), tex: `/colors/${id}.webp` }]),
+  ),
+};
+export type ColId = keyof typeof COLORS;
 
 export const FURN: Record<OpenType, number> = { turn: 22, tilt: 18, turntilt: 30, fix: 0 };
 export const ORDER: OpenType[] = ['turn', 'tilt', 'turntilt', 'fix'];
@@ -61,7 +92,7 @@ export const tplById = (id: TplId) => TEMPLATES.find((t) => t.id === id)!;
 
 export const initialState = (id: TplId = 'd3'): DemoState => {
   const t = tplById(id);
-  return { tpl: id, W: t.W, H: t.H, prof: 'akfa', col: 'ant', types: t.def.slice(), fr: t.parts.map((p) => p.f) };
+  return { tpl: id, W: t.W, H: t.H, prof: 'akfa', col: 'oq', types: t.def.slice(), fr: t.parts.map((p) => p.f) };
 };
 
 /** Ширины секций в мм (последняя добирает остаток, чтобы сумма = W) */
