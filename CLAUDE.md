@@ -24,6 +24,18 @@ Romchi — приложение для мастеров и компаний, к�
 - AR (позже): `<model-viewer>` (GLB + USDZ)
 - Бэкенд: Node.js + PostgreSQL, headless CMS (Strapi / Directus), заявки → Telegram-бот
 
+## Скиллы дизайна (`.claude/skills/`)
+| Скилл | Когда использовать |
+|---|---|
+| `design-taste-frontend` (Taste Skill) | Новая страница/секция: уникальный визуальный стиль без «шаблонного AI-вида» |
+| `frontend-design` (Anthropic) | Базовые принципы дизайна интерфейса |
+| `impeccable` | Дизайн, аудит, критика, анимация, финальная полировка: `/impeccable polish`, `/impeccable audit`, `/impeccable critique`, `/impeccable animate` |
+| `emil-design-eng` (Emil Kowalski) | Анимации и микро-взаимодействия: easing, длительность, spring, детали |
+| `ask-sonner` | Toast-уведомления через библиотеку Sonner (например, «заявка отправлена») |
+| `ui-ux-pro-max` | Подбор стиля, палитры, шрифтов, UX-правила |
+
+Дизайн-система сайта описывается в `DESIGN.md` (и контекст продукта в `PRODUCT.md`) в корне репозитория — создаются на этапе дизайна (`/impeccable init` или `/impeccable document`). Все скиллы должны следовать DESIGN.md.
+
 ## Структура репозитория (план)
 - `docs/` — план и документация
 - `web/` — фронтенд (Next.js)
