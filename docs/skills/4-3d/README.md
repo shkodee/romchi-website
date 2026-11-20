@@ -1,7 +1,18 @@
 # 4 — 3D-модели
 
 ## Blender (RobLe3/cc-blender-skill)
-Нужно: Blender 4+ и аддон Blender MCP (ahujasid/blender-mcp), подключённый в Claude Code.
+**Blender на ноутбуке ставить не нужно.** Модели делаем в облаке (чат claude.ai / Claude Code в облаке), где Blender работает как Python-модуль без окна:
+
+```bash
+pip install bpy build123d   # Blender 5.x как модуль + CAD
+python3 scripts/okno.py     # скрипт строит модель и сохраняет okno.glb / okno.usdz
+```
+
+Проверено: модель окна из рамы, импоста и стекла собирается и экспортируется в GLB (сайт, Android AR) и USDZ (iPhone AR).
+
+Скиллы `blender-*` написаны под Blender MCP (живой Blender на компьютере). Без MCP используем их как справочник по моделированию, материалам и экспорту, а код выполняем через `bpy`. Готовые файлы `.glb` / `.usdz` кладём в `models/` и в `web/public/models/`.
+
+Если когда-нибудь появится мощный компьютер, можно подключить живой Blender: Blender 4+ и аддон Blender MCP (ahujasid/blender-mcp).
 
 | Скилл | Для чего |
 |---|---|
