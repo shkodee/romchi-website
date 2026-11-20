@@ -78,3 +78,11 @@ input[type=number] { -moz-appearance: textfield; }
 
 @media (hover: hover) { .swatch:hover { transform: translateY(-1px); } }
 .swatch:active { transform: scale(.96); }
+
+/* «Отправить мастерам»: шаги появляются мягко */
+@keyframes step-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.step-in { animation: step-in .26s cubic-bezier(.23,1,.32,1) both; }
+.send-btn:not(:disabled):active, .master-card:active { transform: scale(.98); }
+html { scroll-behavior: smooth; }
+#ustalar { scroll-margin-top: 88px; }
+@media (prefers-reduced-motion: reduce) { .step-in { animation: none; } html { scroll-behavior: auto; } }

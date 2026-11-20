@@ -169,6 +169,29 @@ const uz = {
     required: 'Ism va telefonni kiriting',
   },
   footer: { slogan: 'Romchi — sizga yordamchi', domain: '[romchi.uz]' },
+  send: {
+    cta: 'Ustalarga yuborish',
+    title: 'Maketni ustalarga yuboring',
+    sub: 'Hududingizni tanlang — u yerda ishlaydigan ustalar maketingizni koʻrib, taxminiy narxini aytishadi.',
+    where: 'Qayerda yashaysiz?',
+    region: 'Viloyat yoki shahar',
+    district: 'Tuman',
+    pickRegion: 'Tanlang',
+    pickDistrict: 'Tumanni tanlang',
+    pickRegionFirst: 'Avval viloyatni tanlang',
+    masters: 'Ustalarni tanlang',
+    demoNote: 'Bu namuna kartalar. Ustalar bazasi tez orada ulanadi.',
+    contact: 'Telefon raqamingiz',
+    phone: 'Ustalar shu raqamga javob berishadi',
+    youSend: 'Siz yuboryapsiz:',
+    approx: 'Taxminiy narx',
+    send: 'Ustalarga yuborish',
+    sending: 'Yuborilmoqda…',
+    error: 'Yuborib boʻlmadi. Internetni tekshirib, qayta urinib koʻring.',
+    privacy: 'Raqamingiz faqat siz tanlagan ustalarga koʻrinadi.',
+    doneTitle: 'Maketingiz tayyor!',
+    doneText: 'Ustalar javobini va buyurtmani Romchi ilovasida kuzatib boring. Ilovani yuklab oling — maketingiz u yerda davom etadi.',
+  },
   demo: {
     pill: '✦ Sinab koʻring',
     t1: 'Oʻzingiz',
@@ -380,6 +403,29 @@ const ru: Dict = {
     required: 'Введите имя и телефон',
   },
   footer: { slogan: 'Romchi — sizga yordamchi', domain: '[romchi.uz]' },
+  send: {
+    cta: 'Отправить мастерам',
+    title: 'Отправьте макет мастерам',
+    sub: 'Выберите свой район — мастера, которые там работают, посмотрят макет и назовут примерную цену.',
+    where: 'Где вы живёте?',
+    region: 'Область или город',
+    district: 'Район',
+    pickRegion: 'Выберите',
+    pickDistrict: 'Выберите район',
+    pickRegionFirst: 'Сначала выберите область',
+    masters: 'Выберите мастеров',
+    demoNote: 'Это примеры карточек. База мастеров скоро будет подключена.',
+    contact: 'Ваш телефон',
+    phone: 'Мастера ответят на этот номер',
+    youSend: 'Вы отправляете:',
+    approx: 'Примерная цена',
+    send: 'Отправить мастерам',
+    sending: 'Отправляем…',
+    error: 'Не удалось отправить. Проверьте интернет и попробуйте ещё раз.',
+    privacy: 'Ваш номер увидят только выбранные мастера.',
+    doneTitle: 'Ваш макет готов!',
+    doneText: 'Ответы мастеров и заказ — в приложении Romchi. Скачайте приложение, ваш макет продолжится там.',
+  },
   demo: {
     pill: '✦ Попробуйте',
     t1: 'Посчитайте',
@@ -429,8 +475,8 @@ export const getDict = (l: Lang) => dicts[l];
 
 // Ссылки — заменить реальными
 export const LINKS = {
-  appStore: '#', // [ссылка App Store]
-  googlePlay: '#', // [ссылка Google Play]
-  telegram: 'https://t.me/', // [username Telegram]
+  appStore: 'https://apps.apple.com/uz/app/romchi/id6742743588',
+  googlePlay: 'https://play.google.com/store/apps/details?id=com.conamobile.romchi2',
+  telegram: 'https://t.me/romchi_admin',
   site: 'https://romchi.uz', // [домен]
 };

@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Drawing, { type EditTarget } from './Drawing';
+import SendToMasters from './SendToMasters';
 import {
   COLORS, DEFAULT_RATE, LIMITS, ORDER, PROFILES, TEMPLATES, BAR,
   compute, equalize, fmt, fromQuery, initialState, setHeight, setPartWidth, setWidth, toQuery, tplById,
@@ -17,7 +18,7 @@ const chipCls = (on: boolean) =>
     on ? 'border-brand bg-white text-brand' : 'border-transparent bg-grid text-navy hover:border-[#B9CCF2]'
   }`;
 
-export default function Demo({ t, lang, rate = DEFAULT_RATE, compact = false }: { t: Dict['demo']; lang: Lang; rate?: number; compact?: boolean }) {
+export default function Demo({ t, send, lang, rate = DEFAULT_RATE, compact = false }: { t: Dict['demo']; send?: Dict['send']; lang: Lang; rate?: number; compact?: boolean }) {
   const [s, setS] = useState<DemoState>(() => initialState('d3'));
   const [cmp, setCmp] = useState<Cmp[]>([]);
   const [toast, setToast] = useState<string | null>(null);
@@ -233,6 +234,12 @@ h1{font-size:22px;margin:0 0 4px}.m{color:#5B6478;font-size:13px;margin:0 0 18px
             <span className="rounded-[10px] bg-[#E3F7EA] px-3 py-1.5 text-[#0A6B36]">{r.area.toFixed(2)} m²</span>
           </div>
           <div className="mt-4 flex flex-col gap-2">
+            {send && (
+              <a href="#ustalar" onClick={() => track('demo_cta', { to: 'masters' })}
+                className="focus-ring flex min-h-[52px] items-center justify-center rounded-[14px] bg-navy px-[18px] text-base font-extrabold text-white no-underline">
+                {send.cta}
+              </a>
+            )}
             <button type="button" onClick={addCmp} className="focus-ring min-h-[48px] rounded-[14px] bg-brand px-[18px] text-[15px] font-extrabold text-white">{t.addCmp}</button>
             <div className="grid grid-cols-2 gap-2">
               <button type="button" onClick={pdf} className="focus-ring min-h-[48px] rounded-[14px] bg-grid px-3 text-sm font-extrabold text-navy hover:text-brand">{t.pdf}</button>
@@ -241,6 +248,11 @@ h1{font-size:22px;margin:0 0 4px}.m{color:#5B6478;font-size:13px;margin:0 0 18px
           </div>
         </div>
       </div>
+
+      {send && (
+        <SendToMasters t={send} lang={lang} layout={toQuery(s)} priceUzs={uzs}
+          summary={`${tname} · ${s.W} × ${s.H} mm · ${pname} · ${cname}`} />
+      )}
 
       {/* раскрой */}
       <div className="flex flex-col gap-3.5 rounded-[28px] bg-white p-5 shadow-card sm:p-6">

@@ -35,7 +35,7 @@ export default async function DemoPage({ params }: { params: Promise<{ lang: str
           <p className="m-0 max-w-[380px] rounded-[14px] bg-cream px-4 py-3 text-sm text-muted">{t.note}</p>
         </div>
 
-        <Demo t={t} lang={lang} />
+        <Demo t={t} send={d.send} lang={lang} />
 
         <div className="flex flex-col gap-5 rounded-[28px] bg-brand-deep px-6 py-7 text-white sm:px-8 lg:flex-row lg:items-center lg:justify-between">
           <div>
