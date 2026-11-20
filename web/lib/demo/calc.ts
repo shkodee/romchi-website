@@ -4,7 +4,7 @@
 
 export type OpenType = 'turn' | 'tilt' | 'turntilt' | 'fix';
 export type TplId = 'd1' | 'd2' | 'd3' | 'bb' | 'es' | 'ar';
-export type ProfId = 'akfa' | 'imzo' | 'alutex';
+export type ProfId = 'akfa' | 'alutex';
 export type ColId = 'oq' | 'ant' | 'lam';
 
 export interface Template {
@@ -29,7 +29,6 @@ export const TEMPLATES: Template[] = [
 /** r — $ за погонный метр профиля (демо) */
 export const PROFILES: Record<ProfId, { n: string; r: number }> = {
   akfa: { n: 'Akfa', r: 3.9 },
-  imzo: { n: 'Imzo', r: 3.4 },
   alutex: { n: 'Alutex', r: 6.2 },
 };
 
@@ -44,6 +43,7 @@ export const FURN: Record<OpenType, number> = { turn: 22, tilt: 18, turntilt: 30
 export const ORDER: OpenType[] = ['turn', 'tilt', 'turntilt', 'fix'];
 export const BAR = 6000; // длина хлыста, мм
 export const LIMITS = { W: [400, 3000], H: [400, 2600] } as const;
+export const MIN_PART = 300; // мин. ширина секции, мм
 export const DEFAULT_RATE = 12800; // сум за $ (демо)
 
 export interface DemoState {
@@ -53,14 +53,47 @@ export interface DemoState {
   prof: ProfId;
   col: ColId;
   types: OpenType[];
+  /** доли ширины секций (сумма = 1); задаются пользователем */
+  fr: number[];
 }
 
 export const tplById = (id: TplId) => TEMPLATES.find((t) => t.id === id)!;
 
 export const initialState = (id: TplId = 'd3'): DemoState => {
   const t = tplById(id);
-  return { tpl: id, W: t.W, H: t.H, prof: 'akfa', col: 'ant', types: t.def.slice() };
+  return { tpl: id, W: t.W, H: t.H, prof: 'akfa', col: 'ant', types: t.def.slice(), fr: t.parts.map((p) => p.f) };
 };
+
+/** Ширины секций в мм (последняя добирает остаток, чтобы сумма = W) */
+export function partWidths(s: DemoState): number[] {
+  const ws = s.fr.map((f) => Math.round(f * s.W));
+  if (ws.length) ws[ws.length - 1] = s.W - ws.slice(0, -1).reduce((a, b) => a + b, 0);
+  return ws;
+}
+
+/** Все секции поровну */
+export const equalize = (s: DemoState): DemoState => ({ ...s, fr: s.fr.map(() => 1 / s.fr.length) });
+
+/** Новая ширина секции i (мм): остальные секции сохраняют свои мм, общая ширина меняется */
+export function setPartWidth(s: DemoState, i: number, mm: number): DemoState {
+  const ws = partWidths(s);
+  const others = s.W - ws[i];
+  const max = Math.max(MIN_PART, LIMITS.W[1] - others);
+  ws[i] = Math.min(max, Math.max(MIN_PART, Math.round(mm)));
+  const W = ws.reduce((a, b) => a + b, 0);
+  return { ...s, W, fr: ws.map((w) => w / W) };
+}
+
+/** Новая общая ширина: секции масштабируются пропорционально */
+export function setWidth(s: DemoState, mm: number): DemoState {
+  const n = s.fr.length;
+  const W = Math.min(LIMITS.W[1], Math.max(Math.max(LIMITS.W[0], n * MIN_PART), Math.round(mm)));
+  return { ...s, W };
+}
+
+export const setHeight = (s: DemoState, mm: number): DemoState => ({
+  ...s, H: Math.min(LIMITS.H[1], Math.max(LIMITS.H[0], Math.round(mm))),
+});
 
 export const archRadius = (t: Template, W: number, H: number) => (t.arch ? Math.min(W / 2, H * 0.35) : 0);
 
@@ -75,12 +108,13 @@ export function cutList(s: DemoState): number[] {
     const a = W / 2, b = archR;
     pcs.push(Math.PI * Math.sqrt((a * a + b * b) / 2), W, rectH, rectH);
   } else pcs.push(W, W, H, H);
+  const pw = partWidths(s);
   t.parts.forEach((p, i) => {
     if (i > 0) pcs.push(rectH); // импост
-    if (p.h < 1) pcs.push(p.f * W); // горизонтальный импост над панелью
+    if (p.h < 1) pcs.push(pw[i]); // горизонтальный импост над панелью
     const ty = s.types[i] ?? 'fix';
     if (ty !== 'fix') {
-      const sw = p.f * W - 40, sh = p.h * rectH - 40;
+      const sw = pw[i] - 40, sh = p.h * rectH - 40;
       pcs.push(sw, sw, sh, sh);
     }
   });
@@ -139,7 +173,7 @@ export const usd = (n: number) => (Math.round(n * 100) / 100).toFixed(2);
 
 // ---- ссылка-поделиться: ?t=d3&w=1500&h=1500&p=akfa&c=ant&o=turn.fix.turntilt
 export function toQuery(s: DemoState): string {
-  const q = new URLSearchParams({ t: s.tpl, w: String(s.W), h: String(s.H), p: s.prof, c: s.col, o: s.types.join('.') });
+  const q = new URLSearchParams({ t: s.tpl, w: String(s.W), h: String(s.H), p: s.prof, c: s.col, o: s.types.join('.'), s: partWidths(s).join('.') });
   return q.toString();
 }
 
@@ -153,10 +187,15 @@ export function fromQuery(search: string): DemoState | null {
   const W = Number(q.get('w')), H = Number(q.get('h'));
   const p = q.get('p') as ProfId | null, c = q.get('c') as ColId | null;
   const o = (q.get('o') ?? '').split('.').filter((x): x is OpenType => (ORDER as string[]).includes(x));
+  const Wv = Number.isFinite(W) && W > 0 ? clamp(Math.round(W), LIMITS.W) : base.W;
+  const sw = (q.get('s') ?? '').split('.').map(Number);
+  const swOk = sw.length === base.fr.length && sw.every((x) => Number.isFinite(x) && x >= MIN_PART);
+  const swSum = swOk ? sw.reduce((a, b) => a + b, 0) : 0;
   return {
     ...base,
-    W: Number.isFinite(W) && W > 0 ? clamp(Math.round(W / 10) * 10, LIMITS.W) : base.W,
-    H: Number.isFinite(H) && H > 0 ? clamp(Math.round(H / 10) * 10, LIMITS.H) : base.H,
+    W: swOk ? clamp(swSum, LIMITS.W) : Wv,
+    fr: swOk ? sw.map((x) => x / swSum) : base.fr,
+    H: Number.isFinite(H) && H > 0 ? clamp(Math.round(H), LIMITS.H) : base.H,
     prof: p && p in PROFILES ? p : base.prof,
     col: c && c in COLORS ? c : base.col,
     types: o.length === base.types.length ? o : base.types,

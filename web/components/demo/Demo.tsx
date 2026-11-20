@@ -1,16 +1,16 @@
 'use client';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Drawing from './Drawing';
+import Drawing, { type EditTarget } from './Drawing';
 import {
   COLORS, DEFAULT_RATE, LIMITS, ORDER, PROFILES, TEMPLATES, BAR,
-  compute, fmt, fromQuery, initialState, toQuery, tplById, usd,
+  compute, equalize, fmt, fromQuery, initialState, setHeight, setPartWidth, setWidth, toQuery, tplById,
   type ColId, type DemoState, type ProfId, type TplId,
 } from '@/lib/demo/calc';
 import type { Dict, Lang } from '@/lib/i18n';
 import { track } from '@/lib/analytics';
 import { LINKS } from '@/lib/i18n';
 
-interface Cmp { key: string; name: string; size: string; prof: string; col: string; usd: string; uzs: string }
+interface Cmp { key: string; name: string; size: string; prof: string; col: string; uzs: string }
 
 const chipCls = (on: boolean) =>
   `focus-ring min-h-[44px] rounded-xl border-2 px-4 text-sm font-bold transition ${
@@ -40,14 +40,23 @@ export default function Demo({ t, lang, rate = DEFAULT_RATE, compact = false }: 
 
   const pickTpl = (id: TplId) => {
     const x = tplById(id);
-    setS((p) => ({ ...p, tpl: id, W: x.W, H: x.H, types: x.def.slice() }));
+    setS((p) => ({ ...p, tpl: id, W: x.W, H: x.H, types: x.def.slice(), fr: x.parts.map((q) => q.f) }));
     track('demo_template', { tpl: id });
   };
   const setDim = (k: 'W' | 'H', v: number) => {
-    setS((p) => ({ ...p, [k]: v }));
+    setS((p) => (k === 'W' ? setWidth(p, v) : setHeight(p, v)));
     clearTimeout(resizeTimer.current);
     resizeTimer.current = setTimeout(() => track('demo_resize', { dim: k, value: v }), 600);
   };
+  const onEdit = useCallback((target: EditTarget, mm: number) => {
+    setS((p) => (target.k === 'W' ? setWidth(p, mm) : target.k === 'H' ? setHeight(p, mm) : setPartWidth(p, target.i, mm)));
+    track('demo_resize', { dim: target.k === 'part' ? `part${target.i}` : target.k, value: mm, via: 'drawing' });
+  }, []);
+  const onEqualize = useCallback(() => {
+    setS((p) => equalize(p));
+    track('demo_equalize', {});
+  }, []);
+
   const cycle = useCallback((i: number) => {
     setS((p) => {
       const ts = p.types.slice();
@@ -58,7 +67,7 @@ export default function Demo({ t, lang, rate = DEFAULT_RATE, compact = false }: 
   }, []);
 
   const addCmp = () => {
-    const item: Cmp = { key: toQuery(s) + Date.now(), name: tname, size: `${s.W} × ${s.H}`, prof: pname, col: cname, usd: usd(r.totalUsd), uzs };
+    const item: Cmp = { key: toQuery(s) + Date.now(), name: tname, size: `${s.W} × ${s.H}`, prof: pname, col: cname, uzs };
     setCmp((c) => [...c, item].slice(-3));
     track('demo_compare', { tpl: s.tpl });
   };
@@ -76,25 +85,22 @@ export default function Demo({ t, lang, rate = DEFAULT_RATE, compact = false }: 
 
   const pdf = () => {
     track('demo_pdf', { tpl: s.tpl });
-    const svg = svgRef.current?.outerHTML ?? '';
-    const rows: [string, string][] = [
-      [`${t.rows.profile} · ${r.meters.toFixed(2)} m`, fmt(r.profC)],
-      [`${t.rows.glass} · ${r.glassArea.toFixed(2)} m²`, fmt(r.glassC)],
-      [t.rows.furn, fmt(r.furnC)],
-      [t.rows.labor, fmt(r.labor)],
-    ];
+    // в PDF — чистый чертёж без кнопок редактирования
+    const clone = svgRef.current?.cloneNode(true) as SVGSVGElement | undefined;
+    clone?.querySelectorAll('[data-ui]').forEach((el) => el.remove());
+    const svg = clone?.outerHTML ?? '';
     const date = new Date().toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'uz-UZ');
     const html = `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><title>${t.pdfTitle}</title>
 <style>@page{size:A4;margin:16mm}body{font-family:Manrope,Arial,sans-serif;color:#0B1530;margin:0}
 h1{font-size:22px;margin:0 0 4px}.m{color:#5B6478;font-size:13px;margin:0 0 18px}
 .logo{font-weight:800;font-size:26px;letter-spacing:-.04em;margin-bottom:14px}.logo b{background:#0A6CFF;color:#fff;border-radius:7px;padding:0 6px 2px}
 .svg{background:#DCE3EC;border-radius:14px;padding:8px;margin-bottom:16px}svg{width:100%;height:auto;max-height:330px}
-table{width:100%;border-collapse:collapse;font-size:14px}td{padding:8px 0;border-bottom:1px dashed #DCE4F2}td:last-child{text-align:right;font-weight:700}
-.tot{font-size:24px;font-weight:800;color:#0A6CFF;margin:14px 0 2px}.n{margin-top:18px;font-size:12px;color:#5B6478;background:#FFF6DE;padding:10px 12px;border-radius:10px}</style></head>
+.lbl{font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#5B6478;margin-top:6px}
+.tot{font-size:30px;font-weight:800;color:#0077FF;margin:4px 0 2px}.n{margin-top:18px;font-size:12px;color:#5B6478;background:#FFF6DE;padding:10px 12px;border-radius:10px}</style></head>
 <body><div class="logo">Rom<b>chi</b></div><h1>${t.pdfTitle}</h1>
 <p class="m">${tname} · ${s.W} × ${s.H} mm · ${pname} · ${cname} · ${r.area.toFixed(2)} m² · ${date}</p>
-<div class="svg">${svg}</div><table>${rows.map(([a, b]) => `<tr><td>${a}</td><td>$ ${b}</td></tr>`).join('')}</table>
-<div class="tot">${uzs} ${lang === 'ru' ? 'сум' : 'soʻm'}</div><div>$ ${usd(r.totalUsd)} · ${t.rate}: ${fmt(rate)}</div>
+<div class="svg">${svg}</div>
+<div class="lbl">${t.total}</div><div class="tot">${uzs} ${lang === 'ru' ? 'сум' : 'soʻm'}</div>
 <p class="n">${t.pdfNote} ${LINKS.site}</p></body></html>`;
     const fr = document.createElement('iframe');
     fr.setAttribute('aria-hidden', 'true');
@@ -131,20 +137,41 @@ table{width:100%;border-collapse:collapse;font-size:14px}td{padding:8px 0;border
             <p className="m-0 text-xs font-extrabold uppercase tracking-[.14em] text-brand-deep">{t.drawing}</p>
             <span className="text-[13px] font-bold text-[#3B4558]">{tname} · {s.W} × {s.H} mm</span>
           </div>
-          <Drawing ref={svgRef} s={s} ariaLabel={aria} onCycle={cycle} typeNames={t.types} />
+          <Drawing ref={svgRef} s={s} ariaLabel={aria} onCycle={cycle} typeNames={t.types}
+            onEdit={onEdit} onEqualize={onEqualize} labels={{ edit: t.editDim, equalize: t.equalize }} />
+          <div className="flex flex-col gap-1.5 rounded-2xl bg-white/70 px-4 py-3 text-[13px] leading-snug text-[#3B4558]">
+            <p className="m-0 flex items-start gap-2.5">
+              <svg aria-hidden="true" width="26" height="18" viewBox="0 0 26 18" className="mt-px shrink-0"><rect x="1" y="2" width="24" height="14" rx="4" fill="#fff" stroke="#0077FF" strokeWidth="1.2" strokeDasharray="3 2" /><text x="13" y="12.5" textAnchor="middle" fontSize="8" fontWeight="800" fill="#0B1530">500</text></svg>
+              <span>{t.hintEdit}</span>
+            </p>
+            {tpl.parts.length > 1 && (
+              <p className="m-0 flex items-start gap-2.5">
+                <svg aria-hidden="true" width="26" height="18" viewBox="0 0 26 18" className="mt-px shrink-0"><circle cx="13" cy="9" r="7.5" fill="#0077FF" /><line x1="9.6" y1="7.3" x2="16.4" y2="7.3" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" /><line x1="9.6" y1="10.7" x2="16.4" y2="10.7" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" /></svg>
+                <span>{t.hintEqual}</span>
+              </p>
+            )}
+            <p className="m-0 pl-[36px] text-muted">{t.clickHint}</p>
+          </div>
         </div>
 
         {/* управление */}
         <div className="order-2 flex flex-col gap-5 rounded-[28px] bg-white p-5 shadow-card sm:p-6 lg:order-1">
           {(['W', 'H'] as const).map((k) => (
-            <label key={k} className="flex flex-col gap-1.5 text-sm font-bold text-[#3B4558]">
-              <span className="flex justify-between">{k === 'W' ? t.width : t.height}<b className="text-base text-brand-deep">{s[k]} mm</b></span>
+            <div key={k} className="flex flex-col gap-1.5 text-sm font-bold text-[#3B4558]">
+              <div className="flex items-center justify-between gap-3">
+                <label htmlFor={`dim-${k}`}>{k === 'W' ? t.width : t.height}</label>
+                <span className="flex items-center gap-1.5">
+                  <NumInput id={`dim-${k}`} value={s[k]} onCommit={(v) => setDim(k, v)} />
+                  <span className="text-muted">mm</span>
+                </span>
+              </div>
               <input
                 type="range" min={LIMITS[k][0]} max={LIMITS[k][1]} step={10} value={s[k]}
                 onChange={(e) => setDim(k, Number(e.target.value))}
+                aria-label={k === 'W' ? t.width : t.height}
                 className="h-7 w-full accent-brand"
               />
-            </label>
+            </div>
           ))}
           <fieldset className="m-0 border-0 p-0">
             <legend className="mb-2.5 p-0 text-sm font-bold text-[#3B4558]">{t.profile}</legend>
@@ -186,22 +213,11 @@ table{width:100%;border-collapse:collapse;font-size:14px}td{padding:8px 0;border
         <div className="order-3 flex flex-col gap-1.5 rounded-[28px] bg-white p-5 shadow-card sm:p-6" aria-live="polite">
           <p className="m-0 mb-2 text-xs font-extrabold uppercase tracking-[.14em] text-brand-deep">{t.total}</p>
           <div className="text-[34px] font-extrabold tracking-[-0.03em] text-brand">{uzs} <span className="text-lg">{sum}</span></div>
-          <div className="mb-2.5 text-lg font-bold text-muted">$ {usd(r.totalUsd)}</div>
           <div className="mb-2 flex flex-wrap gap-2 text-[13px] font-extrabold">
             <span className="rounded-[10px] bg-brand-soft px-3 py-1.5 text-brand-deep">{pname}</span>
             <span className="rounded-[10px] bg-[#F3E8FF] px-3 py-1.5 text-[#7E22CE]">{cname}</span>
             <span className="rounded-[10px] bg-[#E3F7EA] px-3 py-1.5 text-[#0A6B36]">{r.area.toFixed(2)} m²</span>
           </div>
-          {[
-            [`${t.rows.profile} · ${r.meters.toFixed(2)} m`, r.profC],
-            [`${t.rows.glass} · ${r.glassArea.toFixed(2)} m²`, r.glassC],
-            [t.rows.furn, r.furnC],
-            [t.rows.labor, r.labor],
-          ].map(([n, v]) => (
-            <div key={n as string} className="flex justify-between gap-3 border-b border-dashed border-line py-2.5 text-[15px] text-[#3B4558]">
-              <span>{n}</span><b className="text-navy">$ {fmt(v as number)}</b>
-            </div>
-          ))}
           <div className="mt-4 flex flex-col gap-2">
             <button type="button" onClick={addCmp} className="focus-ring min-h-[48px] rounded-[14px] bg-brand px-[18px] text-[15px] font-extrabold text-white">{t.addCmp}</button>
             <div className="grid grid-cols-2 gap-2">
@@ -256,7 +272,6 @@ table{width:100%;border-collapse:collapse;font-size:14px}td{padding:8px 0;border
                 <b className="text-base">{c.name}</b>
                 <span className="text-sm text-muted">{c.size} mm · {c.prof} · {c.col}</span>
                 <span className="mt-1.5 text-[22px] font-extrabold text-brand">{c.uzs} {sum}</span>
-                <span className="text-sm font-bold text-muted">$ {c.usd}</span>
               </div>
             ))}
           </div>
@@ -267,5 +282,27 @@ table{width:100%;border-collapse:collapse;font-size:14px}td{padding:8px 0;border
         <div role="status" className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-2xl bg-navy px-5 py-3 text-sm font-bold text-white shadow-float">{toast}</div>
       )}
     </div>
+  );
+}
+
+/** Поле ввода размера: правка без прыжков, применение по Enter / уходу с поля */
+function NumInput({ id, value, onCommit }: { id: string; value: number; onCommit: (v: number) => void }) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const commit = () => {
+    if (draft !== null) {
+      const v = Number(draft);
+      if (Number.isFinite(v) && v > 0) onCommit(v);
+    }
+    setDraft(null);
+  };
+  return (
+    <input
+      id={id} type="number" inputMode="numeric" value={draft ?? String(value)}
+      onFocus={(e) => e.currentTarget.select()}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); } }}
+      className="focus-ring h-10 w-[88px] rounded-xl border-2 border-line bg-white text-center text-base font-extrabold text-brand-deep tabular-nums focus:border-brand"
+    />
   );
 }

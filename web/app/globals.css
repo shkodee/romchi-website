@@ -63,3 +63,15 @@ body { background: #F3F6FC; color: #0B1530; }
   .no-print { display: none !important; }
   body { background: #fff; }
 }
+
+/* Чертёж демо: кликабельные размеры и кружки «поровну» */
+.dim-pill, .eq-ring { transition: fill .16s cubic-bezier(.23,1,.32,1), stroke-dasharray .16s; }
+@media (hover: hover) {
+  .dim-btn:hover .dim-pill { fill: #E6F1FF; stroke-dasharray: 0; }
+  .eq-dot:hover .eq-ring { fill: #E6F1FF; }
+}
+.dim-btn:focus-visible .dim-pill { stroke-width: 2.2; stroke-dasharray: 0; }
+.eq-dot:focus-visible .eq-ring { stroke-width: 2.6; }
+.dim-btn:active .dim-pill, .eq-dot:active .eq-ring { fill: #CFE4FF; }
+input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; }
