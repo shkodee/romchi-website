@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="820" viewBox="0 0 1100 820">
+<defs><pattern id="g" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M48 0H0V48" fill="none" stroke="#0A5CF0" stroke-opacity=".09"/></pattern></defs>
+<rect width="1100" height="820" fill="#EEF3FC"/><rect width="1100" height="820" fill="url(#g)"/>
+<rect x="330.0" y="229.60000000000002" width="440.0" height="396.0" rx="6" fill="#3A4250"/>
+<rect x="352.0" y="251.60000000000002" width="187.0" height="352.0" fill="#4DD0FF"/>
+<rect x="561.0" y="251.60000000000002" width="187.0" height="352.0" fill="#4DD0FF"/>
+<text x="550.0" y="164.0" text-anchor="middle" font-family="Manrope,Arial,sans-serif" font-weight="800" font-size="42" fill="#0B1530">Kesish xaritasi</text>
+<text x="550.0" y="705.2" text-anchor="middle" font-family="Manrope,Arial,sans-serif" font-weight="700" font-size="28" fill="#0A5CF0">public/screens/kesish-xaritasi.jpg</text>
+</svg>

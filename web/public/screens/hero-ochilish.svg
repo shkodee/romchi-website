@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="660" height="420" viewBox="0 0 660 420">
+<defs><pattern id="g" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M48 0H0V48" fill="none" stroke="#0A5CF0" stroke-opacity=".09"/></pattern></defs>
+<rect width="660" height="420" fill="#EEF3FC"/><rect width="660" height="420" fill="url(#g)"/>
+<rect x="198.0" y="117.60000000000001" width="264.0" height="237.6" rx="6" fill="#3A4250"/>
+<rect x="211.20000000000002" y="130.8" width="112.2" height="211.2" fill="#4DD0FF"/>
+<rect x="336.6" y="130.8" width="112.2" height="211.2" fill="#4DD0FF"/>
+<text x="330.0" y="84.0" text-anchor="middle" font-family="Manrope,Arial,sans-serif" font-weight="800" font-size="25" fill="#0B1530">Ochilish turlari paneli</text>
+<text x="330.0" y="361.2" text-anchor="middle" font-family="Manrope,Arial,sans-serif" font-weight="700" font-size="16" fill="#0A5CF0">public/screens/hero-ochilish.jpg</text>
+</svg>

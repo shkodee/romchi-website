@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1100" viewBox="0 0 900 1100">
+<defs><pattern id="g" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M48 0H0V48" fill="none" stroke="#0A5CF0" stroke-opacity=".09"/></pattern></defs>
+<rect width="900" height="1100" fill="#EEF3FC"/><rect width="900" height="1100" fill="url(#g)"/>
+<rect x="270.0" y="308.00000000000006" width="360.0" height="324.0" rx="6" fill="#3A4250"/>
+<rect x="288.0" y="326.00000000000006" width="153.0" height="288.0" fill="#4DD0FF"/>
+<rect x="459.0" y="326.00000000000006" width="153.0" height="288.0" fill="#4DD0FF"/>
+<text x="450.0" y="220.0" text-anchor="middle" font-family="Manrope,Arial,sans-serif" font-weight="800" font-size="35" fill="#0B1530">Bosh ekran</text>
+<text x="450.0" y="946.0" text-anchor="middle" font-family="Manrope,Arial,sans-serif" font-weight="700" font-size="22" fill="#0A5CF0">public/screens/bosh-ekran.jpg</text>
+</svg>
