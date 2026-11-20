@@ -17,14 +17,17 @@ interface Props {
   /** выровнять секции поровну */
   onEqualize?: () => void;
   labels?: { edit: string; equalize: string };
+  unit?: 'mm' | 'cm';
 }
 
 /** Кликабельный размер: «таблетка» с числом; по клику превращается в поле ввода */
-function Dim({ x, y, value, target, editing, setEditing, onEdit, label, vertical = false }: {
+function Dim({ x, y, value: mm, target, editing, setEditing, onEdit, label, vertical = false, unit = 'mm' }: {
   x: number; y: number; value: number; target: EditTarget; editing: string | null;
-  setEditing: (k: string | null) => void; onEdit?: (t: EditTarget, mm: number) => void; label: string; vertical?: boolean;
+  setEditing: (k: string | null) => void; onEdit?: (t: EditTarget, mm: number) => void; label: string; vertical?: boolean; unit?: 'mm' | 'cm';
 }) {
   const k = keyOf(target);
+  const f = unit === 'cm' ? 10 : 1;
+  const value = Math.round(mm / f);
   const w = String(value).length * 8.6 + 18;
   if (!onEdit) {
     return (
@@ -34,7 +37,7 @@ function Dim({ x, y, value, target, editing, setEditing, onEdit, label, vertical
   if (editing === k) {
     const commit = (el: HTMLInputElement) => {
       const v = Number(el.value);
-      if (Number.isFinite(v) && v > 0) onEdit(target, v);
+      if (Number.isFinite(v) && v > 0) onEdit(target, v * f);
       setEditing(null);
     };
     return (
@@ -55,7 +58,7 @@ function Dim({ x, y, value, target, editing, setEditing, onEdit, label, vertical
   const open = () => setEditing(k);
   return (
     <g
-      role="button" tabIndex={0} aria-label={`${label}: ${value} mm`} className="dim-btn cursor-pointer focus:outline-none"
+      role="button" tabIndex={0} aria-label={`${label}: ${value} ${unit === 'cm' ? 'sm' : 'mm'}`} className="dim-btn cursor-pointer focus:outline-none"
       onClick={open}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } }}
       transform={vertical ? `rotate(-90 ${x} ${y})` : undefined}
@@ -85,7 +88,7 @@ function EqualDot({ x, y, onEqualize, label, active }: { x: number; y: number; o
 }
 
 /** 2D-чертёж в стиле приложения: рама, створки C1/F1, линии открывания, размеры */
-const Drawing = forwardRef<SVGSVGElement, Props>(function Drawing({ s, ariaLabel, onCycle, typeNames, onEdit, onEqualize, labels }, ref) {
+const Drawing = forwardRef<SVGSVGElement, Props>(function Drawing({ s, ariaLabel, onCycle, typeNames, onEdit, onEqualize, labels, unit = 'mm' }, ref) {
   const [editing, setEditing] = useState<string | null>(null);
   const pwMm = partWidths(s);
   const unequal = pwMm.length > 1 && Math.max(...pwMm) - Math.min(...pwMm) > 2;
@@ -175,7 +178,7 @@ const Drawing = forwardRef<SVGSVGElement, Props>(function Drawing({ s, ariaLabel
           )}
           {p.dim && (
             <Dim x={r1((p.dim.x1 + p.dim.x2) / 2)} y={r1(dimY - 5)} value={p.dim.t} target={{ k: 'part', i: p.i }}
-              editing={editing} setEditing={setEditing} onEdit={onEdit} label={`${labels?.edit ?? ''} ${p.label}`} />
+              editing={editing} setEditing={setEditing} onEdit={onEdit} unit={unit} label={`${labels?.edit ?? ''} ${p.label}`} />
           )}
         </g>
       ))}
@@ -189,8 +192,8 @@ const Drawing = forwardRef<SVGSVGElement, Props>(function Drawing({ s, ariaLabel
         <line x1={r1(ox - 30)} y1={r1(oy)} x2={r1(ox - 14)} y2={r1(oy)} />
         <line x1={r1(ox - 30)} y1={r1(oy + hs)} x2={r1(ox - 14)} y2={r1(oy + hs)} />
       </g>
-      <Dim x={r1(ox + ws / 2)} y={r1(hy - 6)} value={W} target={{ k: 'W' }} editing={editing} setEditing={setEditing} onEdit={onEdit} label={labels?.edit ?? 'W'} />
-      <Dim x={vtx} y={vty} value={H} target={{ k: 'H' }} editing={editing} setEditing={setEditing} onEdit={onEdit} label={labels?.edit ?? 'H'} vertical />
+      <Dim x={r1(ox + ws / 2)} y={r1(hy - 6)} value={W} target={{ k: 'W' }} editing={editing} setEditing={setEditing} onEdit={onEdit} unit={unit} label={labels?.edit ?? 'W'} />
+      <Dim x={vtx} y={vty} value={H} target={{ k: 'H' }} editing={editing} setEditing={setEditing} onEdit={onEdit} unit={unit} label={labels?.edit ?? 'H'} vertical />
       {onEqualize && n > 1 && (
         <>
           <EqualDot x={r1(ox + ws + 20)} y={r1(dimY)} onEqualize={onEqualize} label={labels?.equalize ?? ''} active={unequal} />

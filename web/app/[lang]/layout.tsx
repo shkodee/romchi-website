@@ -11,7 +11,7 @@ import { LANGS, LINKS, getDict, isLang } from '@/lib/i18n';
 export const dynamicParams = false;
 export const generateStaticParams = () => LANGS.map((lang) => ({ lang }));
 
-export const viewport: Viewport = { themeColor: '#0A6CFF', width: 'device-width', initialScale: 1 };
+export const viewport: Viewport = { themeColor: '#0077FF', width: 'device-width', initialScale: 1 };
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
@@ -58,6 +58,7 @@ export default async function LangLayout({ children, params }: { children: React
           <div className="wrap flex flex-wrap items-center justify-between gap-6 text-sm">
             <Logo size={22} light star={false} />
             <span>{d.footer.slogan}</span>
+            <a href={`/${lang}/ustalar/`} className="focus-ring rounded font-bold text-white underline decoration-white/40 underline-offset-4">{d.wiz.forMasters}</a>
             <span>© 2026 Romchi · {d.footer.domain}</span>
           </div>
         </footer>

@@ -86,3 +86,15 @@ input[type=number] { -moz-appearance: textfield; }
 html { scroll-behavior: smooth; }
 #ustalar { scroll-margin-top: 88px; }
 @media (prefers-reduced-motion: reduce) { .step-in { animation: none; } html { scroll-behavior: auto; } }
+
+/* Конструктор для граждан: отклик на нажатие (Emil: scale .97, 160ms ease-out) */
+.press { transition: transform 160ms cubic-bezier(.23,1,.32,1), box-shadow 160ms cubic-bezier(.23,1,.32,1), border-color 160ms ease; }
+.press:active { transform: scale(.97); }
+@media (hover: hover) and (pointer: fine) {
+  .type-card:hover { border-color: #0077FF; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .press:active { transform: none; }
+  .step-in { animation: wiz-fade .2s ease both; }
+}
+@keyframes wiz-fade { from { opacity: 0; } }
