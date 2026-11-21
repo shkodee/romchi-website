@@ -6,6 +6,7 @@ import '@fontsource-variable/onest'; // сайт для граждан: текс
 import '@fontsource/unbounded/700.css'; // сайт для граждан: заголовки и цифры
 import { notFound } from 'next/navigation';
 import Tracker from '@/components/Tracker';
+import ThemeSync from '@/components/ThemeSync';
 import { LANGS, LINKS, isLang } from '@/lib/i18n';
 import { cdict } from '@/lib/citizen/i18n';
 
@@ -55,6 +56,7 @@ export default async function LangLayout({ children, params }: { children: React
         <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-sun focus:px-4 focus:py-3 focus:font-extrabold">{t.skip}</a>
         {children}
         <Tracker />
+        <ThemeSync />
       </body>
     </html>
   );
