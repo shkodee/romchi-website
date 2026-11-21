@@ -1,6 +1,6 @@
 // Состояние пути гражданина: заказ, цвет, уровень, район, мастера, телефон.
 // Хранится в localStorage (возврат на сайт — всё на месте) и кодируется в ссылку «Ulashish».
-import { COLORS, LEVELS, isColor, isTpl, newItem, clamp, LIMITS, type Item, type Lvl, type Open, type Uzor, OPENS, UZORS } from './model';
+import { COLORS, COLOR_NAMES, LEVELS, isColor, isTpl, newItem, clamp, LIMITS, type Item, type Lvl, type Open, type Uzor, OPENS, UZORS } from './model';
 
 export type Step = 'turi' | 'olcham' | 'buyurtma' | 'rang' | 'narx' | 'hudud' | 'ustalar' | 'tayyor';
 export const STEPS: Step[] = ['turi', 'olcham', 'buyurtma', 'rang', 'narx', 'hudud', 'ustalar', 'tayyor'];
@@ -32,6 +32,7 @@ const OPEN_SET = new Set<string>([...OPENS, 'slideL', 'slideR']);
 function cleanItem(x: unknown): Item | null {
   if (!x || typeof x !== 'object') return null;
   const o = x as Partial<Item>;
+  if ((o.tpl as string) === 'esg') o.tpl = 'es'; // «стеклянная дверь» слилась с «дверь» (панели у дверей убрали)
   if (!isTpl(o.tpl) || !Array.isArray(o.cols) || !o.cols.length || o.cols.length > 4) return null;
   const cols = o.cols.map((c) => ({
     f: Number(c?.f) > 0 ? Number(c.f) : 1 / o.cols!.length,
@@ -46,8 +47,9 @@ function cleanItem(x: unknown): Item | null {
     W: clamp(Math.round(Number(o.W) || 100), LIMITS.W[0], LIMITS.W[1]),
     H: clamp(Math.round(Number(o.H) || 100), LIMITS.H[0], LIMITS.H[1]),
     cols,
-    uzor: (UZORS.includes(o.uzor as Uzor) ? o.uzor : 'none') as Uzor,
+    uzor: (UZORS.includes(o.uzor as Uzor) ? o.uzor : (o.uzor as string) === 'crossFlower' ? 'cross' : 'none') as Uzor,
     qty: clamp(Math.round(Number(o.qty) || 1), 1, 99),
+    ...(isColor(o.col) ? { col: o.col } : {}),
   };
 }
 
@@ -82,7 +84,7 @@ const b64 = (s: string) => btoa(unescape(encodeURIComponent(s))).replace(/\+/g, 
 const unb64 = (s: string) => decodeURIComponent(escape(atob(s.replace(/-/g, '+').replace(/_/g, '/'))));
 
 export function encodeShare(s: S): string {
-  const items = s.items.map(({ tpl, W, H, cols, uzor, qty }) => ({ tpl, W, H, cols: cols.map((c) => ({ f: +c.f.toFixed(4), open: c.open, ...(c.panel ? { panel: c.panel } : {}) })), uzor, qty }));
+  const items = s.items.map(({ tpl, W, H, cols, uzor, qty, col }) => ({ tpl, W, H, cols: cols.map((c) => ({ f: +c.f.toFixed(4), open: c.open, ...(c.panel ? { panel: c.panel } : {}) })), uzor, qty, ...(col ? { col } : {}) }));
   return b64(JSON.stringify({ items, col: s.col, lvl: s.lvl, brand: s.brand }));
 }
 
@@ -101,3 +103,12 @@ export function decodeShare(m: string): Partial<S> | null {
 }
 
 export { newItem, COLORS };
+
+/** цвет изделия: свой, иначе общий */
+export const itemCol = (it: Pick<Item, 'col'>, s: Pick<S, 'col'>) => it.col ?? s.col;
+
+/** «Zal-dub» или «3 xil rang», если окна разных цветов */
+export function colorSummary(s: S, many: (n: number) => string): string {
+  const ids = new Set(s.items.map((x) => itemCol(x, s) ?? 'oq'));
+  return ids.size > 1 ? many(ids.size) : COLOR_NAMES[[...ids][0] ?? s.col ?? 'oq'];
+}

@@ -3,15 +3,12 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
 import type { Lang } from '@/lib/i18n';
-
-/** Логотип Romchi: «Rom» + «chi» в синей плашке + жёлтая звёздочка */
+import LogoMark from '../LogoMark';
+/** Оригинальный логотип Romchi (logo.svg команды); «Rom» — цвета текста темы */
 export function Logo({ lang, size = 24 }: { lang: Lang; size?: number }) {
   return (
-    <Link href={`/${lang}/`} className="rc-logo" style={{ fontSize: size }} aria-label="Romchi">
-      Rom<b>chi</b>
-      <svg width={size * 0.5} height={size * 0.5} viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M12 0l2.6 9.4L24 12l-9.4 2.6L12 24l-2.6-9.4L0 12l9.4-2.6z" fill="#FFC529" />
-      </svg>
+    <Link href={`/${lang}/`} className="rc-logo" aria-label="Romchi">
+      <LogoMark height={Math.round(size * 1.25)} />
     </Link>
   );
 }
@@ -31,16 +28,15 @@ export function LangSwitch({ lang, label }: { lang: Lang; label: string }) {
   return (
     <nav className="rc-lang" aria-label={label}>
       {(['uz', 'ru'] as const).map((l) => (
-        <a key={l} href={to(l)} hrefLang={l} lang={l} aria-current={l === lang ? 'true' : undefined}>{l.toUpperCase()}</a>
+        <Link key={l} href={to(l)} replace scroll={false} hrefLang={l} lang={l} aria-current={l === lang ? 'true' : undefined}>{l.toUpperCase()}</Link>
       ))}
     </nav>
   );
 }
 
 const sub = (cb: () => void) => {
-  const m = window.matchMedia('(prefers-color-scheme: dark)');
-  m.addEventListener('change', cb);
-  return () => m.removeEventListener('change', cb);
+  window.addEventListener('rc:theme', cb);
+  return () => window.removeEventListener('rc:theme', cb);
 };
 /** медиазапрос (на сервере — false) */
 export function useMedia(q: string) {
@@ -51,8 +47,26 @@ export function useMedia(q: string) {
   );
 }
 
-/** тёмная тема системы (рамы окон в тёмной теме белые) */
-export const useDark = () => useSyncExternalStore(sub, () => window.matchMedia('(prefers-color-scheme: dark)').matches, () => false);
+/** текущая тема сайта: data-theme на <html> (рамы окон в тёмной теме белые) */
+export const useDark = () => useSyncExternalStore(sub, () => document.documentElement.dataset.theme === 'dark', () => false);
+
+/** Переключатель светлая ↔ тёмная; выбор запоминается, по умолчанию — тема системы */
+export function ThemeToggle({ label }: { label: string }) {
+  const dark = useDark();
+  const toggle = () => {
+    const next = dark ? 'light' : 'dark';
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem('rc-theme', next); } catch {}
+    document.querySelector('meta[name="theme-color"]:not([media])')?.setAttribute('content', next === 'dark' ? '#0F1013' : '#F3F6FC');
+    window.dispatchEvent(new Event('rc:theme'));
+  };
+  return (
+    <button type="button" className="rc-theme" onClick={toggle} aria-label={label} aria-pressed={dark} title={label} data-track="theme_toggle">
+      <svg className="sun" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg>
+      <svg className="moon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z" /></svg>
+    </button>
+  );
+}
 
 const ico = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
 export const I = {

@@ -8,7 +8,7 @@ import { cdict, type CDict } from '@/lib/citizen/i18n';
 import { isTpl, newItem, type TplId } from '@/lib/citizen/model';
 import { SEG, decodeShare, initial, isStep, load, save, type S, type Step } from '@/lib/citizen/store';
 import { captureUtm, track } from '@/lib/analytics';
-import { I, LangSwitch, Logo } from './ui';
+import { I, LangSwitch, Logo, ThemeToggle } from './ui';
 import Namunalar from './steps/Namunalar';
 import Konstruktor from './steps/Konstruktor';
 import Buyurtma from './steps/Buyurtma';
@@ -101,6 +101,11 @@ export default function Flow({ lang }: { lang: Lang }) {
         <div className="rc-top rc-noprint">
           <div className="rc-wrap flex items-center gap-6" style={{ paddingTop: 12, paddingBottom: 12 }}>
             <div className="hidden lg:block"><Logo lang={lang} /></div>
+            <div className="hidden lg:block">
+              <button type="button" onClick={back} className="rc-ghost" style={{ minHeight: 44, padding: '0 16px 0 10px' }}>
+                {I.back(20)} {t.back}
+              </button>
+            </div>
             <div className="flex flex-1 flex-col gap-2.5">
               <div className="flex items-center justify-between lg:hidden">
                 <button type="button" onClick={back} className="flex items-center gap-1.5" style={{ background: 'none', border: 0, padding: '6px 0', fontWeight: 600, fontSize: 16, cursor: 'pointer', minHeight: 40 }}>
@@ -116,7 +121,7 @@ export default function Flow({ lang }: { lang: Lang }) {
                 ))}
               </div>
             </div>
-            <div className="hidden lg:block"><LangSwitch lang={lang} label={t.lang} /></div>
+            <div className="flex items-center gap-3"><div className="hidden lg:block"><LangSwitch lang={lang} label={t.lang} /></div><ThemeToggle label={t.theme} /></div>
           </div>
         </div>
       )}

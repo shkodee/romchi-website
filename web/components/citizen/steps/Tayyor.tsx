@@ -1,7 +1,8 @@
 'use client';
 import { useMemo } from 'react';
 import { REGIONS } from '@/lib/masters';
-import { COLOR_NAMES, fmt, total } from '@/lib/citizen/model';
+import { fmt, total } from '@/lib/citizen/model';
+import { colorSummary, itemCol } from '@/lib/citizen/store';
 import { LINKS } from '@/lib/i18n';
 import WindowDrawing from '../WindowDrawing';
 import { I, LangSwitch, Logo, useDark } from '../ui';
@@ -22,7 +23,7 @@ export default function Tayyor({ t, lang, s, set, go }: StepProps) {
   const rows: [string, string][] = [
     [t.rowType, s.items.length > 1 ? t.pcs(s.items.reduce((a, x) => a + x.qty, 0)) : t.tpl[it.tpl]],
     ...(s.items.length === 1 ? [[t.rowSize, `${it.W} × ${it.H} ${t.cm}`] as [string, string]] : []),
-    [t.rowColor, COLOR_NAMES[s.col ?? 'oq']],
+    [t.rowColor, colorSummary(s, t.colorsN)],
     [t.rowDistrict, name(district).replace(/ tumani$| район$/, '')],
     [t.rowMasters, t.pcs(s.sent.masters)],
   ];
@@ -53,7 +54,7 @@ export default function Tayyor({ t, lang, s, set, go }: StepProps) {
               <span className="rc-num" style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--mute)' }}>{date}</span>
             </div>
             <div className="rc-grid flex items-center justify-center" style={{ height: 150, margin: '12px 0', borderRadius: 8 }}>
-              <WindowDrawing shape={it} maxW={180} maxH={124} color={s.col} dark={dark} labels />
+              <WindowDrawing shape={it} maxW={180} maxH={124} color={itemCol(it, s)} dark={dark} labels />
             </div>
             <dl className="m-0">
               {rows.map(([k, v]) => (

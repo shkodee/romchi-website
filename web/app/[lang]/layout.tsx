@@ -41,8 +41,10 @@ export default async function LangLayout({ children, params }: { children: React
   if (!isLang(lang)) notFound();
   const t = cdict(lang);
   return (
-    <html lang={lang}>
+    <html lang={lang} suppressHydrationWarning>
       <head>
+        {/* тема до первой отрисовки: сохранённый выбор, иначе системная */}
+        <script dangerouslySetInnerHTML={{ __html: `try{var t=localStorage.getItem('rc-theme');if(t!=='light'&&t!=='dark')t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.theme=t;var m=document.querySelector('meta[name="theme-color"]:not([media])');if(m)m.setAttribute('content',t==='dark'?'#0F1013':'#F3F6FC')}catch(e){}` }} />
         {/* reveal-анимации сайта мастеров включаются только с JS; если GSAP не загрузился за 3 с — показываем всё */}
         {PIXEL && (
           <script dangerouslySetInnerHTML={{ __html: `!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${PIXEL}');fbq('track','PageView');` }} />

@@ -14,6 +14,7 @@ const CENTERS: [number, number, number][] = [
 
 export default function Hudud({ t, lang, s, set, go }: StepProps) {
   const [q, setQ] = useState('');
+  const [rOpen, setROpen] = useState(false);
   const [geo, setGeo] = useState<'idle' | 'busy' | 'fail'>('idle');
   const name = (x: { uz: string; ru: string }) => (lang === 'ru' ? x.ru : x.uz);
   const region = REGIONS.find((r) => r.id === s.region);
@@ -62,16 +63,32 @@ export default function Hudud({ t, lang, s, set, go }: StepProps) {
           <span style={{ color: 'var(--blue)', display: 'flex' }}>{I.locate()}</span>{geo === 'busy' ? t.geoBusy : t.geo}
         </button>
         {geo === 'fail' && <p role="status" className="rc-hint" style={{ margin: '-6px 0 0', color: '#B4231B' }}>{t.geoFail}</p>}
-        <label className="flex flex-col gap-1.5">
-          <span className="rc-lbl">{t.region}</span>
-          <span className="rc-field relative">
-            <select value={s.region ?? ''} onChange={(e) => { set((st) => ({ ...st, region: Number(e.target.value) || null, district: null })); setQ(''); }} style={{ appearance: 'none', fontWeight: 600, cursor: 'pointer' }}>
-              <option value="" disabled>{t.chooseRegion}</option>
-              {REGIONS.map((r) => <option key={r.id} value={r.id}>{name(r)}</option>)}
-            </select>
-            <span style={{ pointerEvents: 'none', color: 'var(--mute)', display: 'flex' }}>{I.chev()}</span>
-          </span>
-        </label>
+        <div className="flex flex-col gap-1.5" onKeyDown={(e) => { if (e.key === 'Escape' && rOpen) { e.stopPropagation(); setROpen(false); } }}>
+          <span id="region-l" className="rc-lbl">{t.region}</span>
+          <button type="button" className="rc-field w-full" aria-haspopup="listbox" aria-expanded={rOpen} aria-labelledby="region-l region-v" onClick={() => setROpen((o) => !o)}
+            style={{ cursor: 'pointer', textAlign: 'left', justifyContent: 'space-between', fontWeight: 600, fontSize: 17 }}>
+            <span id="region-v" style={{ color: region ? 'var(--ink)' : 'var(--mute)' }}>{region ? name(region) : t.chooseRegion}</span>
+            <span style={{ color: 'var(--mute)', display: 'flex', transform: rOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s var(--e-out)' }}>{I.chev()}</span>
+          </button>
+          {rOpen && (
+            <ul className="step-in m-0 list-none overflow-hidden p-0" role="listbox" aria-label={t.region} style={{ border: '1.5px solid var(--line2)', borderRadius: 14, maxHeight: 290, overflowY: 'auto', background: 'var(--card)', transformOrigin: 'top' }}>
+              {REGIONS.map((r) => {
+                const on = s.region === r.id;
+                return (
+                  <li key={r.id} role="presentation">
+                    <button type="button" role="option" aria-selected={on}
+                      onClick={() => { set((st) => ({ ...st, region: r.id, district: st.region === r.id ? st.district : null, masters: st.region === r.id ? st.masters : [] })); setQ(''); setROpen(false); }}
+                      className="flex w-full items-center justify-between gap-3 text-left"
+                      style={{ minHeight: 52, padding: '0 14px', border: 0, borderBottom: '1px solid var(--line2)', background: on ? 'var(--soft)' : 'transparent', fontWeight: on ? 700 : 500, fontSize: 16, cursor: 'pointer' }}>
+                      {name(r)}
+                      <span className={`rc-radio ${on ? 'on' : ''}`}>{on && I.check(14)}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
         {region && (
           <div className="flex flex-col gap-1.5">
             <label className="flex flex-col gap-1.5">

@@ -1,6 +1,7 @@
 'use client';
 import { area, fmt, fmtArea, priceOf, total } from '@/lib/citizen/model';
 import WindowDrawing from '../WindowDrawing';
+import { itemCol } from '@/lib/citizen/store';
 import { I, Stepper, useDark } from '../ui';
 import type { StepProps } from '../Flow';
 
@@ -31,7 +32,7 @@ export default function Buyurtma({ t, s, set, go }: StepProps) {
             <li key={it.id} className="rc-card flex gap-3" style={{ padding: 12 }}>
               <button type="button" onClick={() => { set((st) => ({ ...st, draft: { ...it }, editId: it.id })); go('olcham'); }}
                 className="flex flex-none items-center justify-center rc-grid" style={{ width: 92, height: 92, borderRadius: 12, border: 0, cursor: 'pointer' }} aria-label={`${t.edit}: ${t.tpl[it.tpl]}`}>
-                <WindowDrawing shape={it} maxW={76} maxH={76} color={s.col} dark={dark} />
+                <WindowDrawing shape={it} maxW={76} maxH={76} color={itemCol(it, s)} dark={dark} />
               </button>
               <div className="flex min-w-0 flex-1 flex-col gap-2">
                 <div className="flex items-start justify-between gap-2">

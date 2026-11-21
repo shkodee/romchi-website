@@ -29,7 +29,13 @@ components/citizen/Main.tsx         главная для граждан
 components/citizen/Flow.tsx         путь по шагам (?q=…), шапка с 5 сегментами, тосты (sonner)
 components/citizen/steps/*.tsx      Namunalar, Konstruktor, Buyurtma, Rang, Narx, Hudud, Ustalar, Tayyor
 components/citizen/WindowDrawing.tsx окно/дверь/арка «как в приложении» (SVG, текстура цвета)
-components/citizen/View3D.tsx       лёгкий 3D-вид (CSS), полное 3D/AR — в приложении
+components/citizen/WindowScene.tsx  настоящее 3D (R3F) из данных конструктора: рама, створки, стекло, свет как в приложении
+components/citizen/View3D*.tsx      окно «3D» в конструкторе (WebGL; без WebGL — лёгкий CSS-вид View3DCss)
+components/citizen/HeroWindow.tsx   3D-окно на главной: взгляд на курсор, открывание по наведению
+components/citizen/AppLinks.tsx     витрина функций приложения, кнопка «Ilovada ochish» (приложение или магазин)
+components/citizen/ItemTabs.tsx     выбор окна из заказа (цвет у каждого окна)
+components/LogoMark.tsx, lib/brand.ts  оригинальный логотип Romchi (public/logo.svg)
+lib/citizen/modes.ts                режимы открывания створок (без three.js)
 lib/citizen/model.ts                шаблоны (16), цвета (18), уровни, бренды, ДЕМО-цена priceOf()
 lib/citizen/store.ts                состояние (localStorage) и ссылка «Ulashish» (?m=…)
 lib/citizen/i18n.ts                 тексты uz/ru
@@ -86,5 +92,7 @@ public/screens/                скриншоты (сейчас заглушки
 
 - Реальные скриншоты и видео-демо (секция 7 плана).
 - Галерея примеров (секция 6) — после API/CMS.
+- Замер production-сборки (3D на главной), при необходимости постер или облегчённая hero-сцена.
+- Схема открытия приложения с сайта от команды приложения (см. `docs/plan-v2.md`, п. 4.3), реальные скриншоты для витрины.
 - GLB-модели из Romchi 3D вместо процедурного окна (Чат 5), затем `<model-viewer>` + AR.
 - Lighthouse-проверка на реальном хостинге (цель 90+ на мобильном).

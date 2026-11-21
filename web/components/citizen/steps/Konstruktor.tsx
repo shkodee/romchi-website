@@ -4,9 +4,11 @@ import {
   LIMITS, OPENS, QUICK, UZORS, area, colWidths, equalize, fmt, fmtArea, isOpenable, newItem, priceOf,
   setColW, setCount, setH, setW, type Item, type Open, type Uzor,
 } from '@/lib/citizen/model';
+import { itemCol } from '@/lib/citizen/store';
 import { track } from '@/lib/analytics';
 import WindowDrawing, { fit, geometry } from '../WindowDrawing';
 import View3D from '../View3D';
+import { AppChip } from '../AppLinks';
 import { I, Stepper, useDark, useMedia } from '../ui';
 import type { StepProps } from '../Flow';
 
@@ -43,6 +45,7 @@ function UzorIcon({ u, s = 30 }: { u: Uzor; s?: number }) {
       <rect x="2" y="2" width={s - 4} height={s - 4} rx="3" />
       {(u === 'v' || u === 'grid') && <path d={`M${a} 2 V${s - 2} M${b} 2 V${s - 2}`} />}
       {(u === 'h' || u === 'grid') && <path d={`M2 ${a} H${s - 2} M2 ${b} H${s - 2}`} />}
+      {u === 'cross' && <path d={`M${s / 2} 2 V${s - 2} M2 ${s / 2} H${s - 2}`} />}
     </svg>
   );
 }
@@ -70,7 +73,7 @@ function NumField({ label, value, onCommit, step = 5, min, max, unit }: { label:
       <span className="rc-field" style={{ padding: '0 4px', gap: 2 }}>
         <button type="button" className="rc-opt" style={{ width: 40, height: 40, border: 0, fontSize: 22, flex: 'none' }} aria-label={`${label} −${step}`} disabled={value <= min} onClick={() => onCommit(value - step)}>−</button>
         <input inputMode="numeric" pattern="[0-9]*" size={3} value={txt} aria-label={`${label}, ${unit}`} className="rc-disp rc-num" style={{ textAlign: 'center', fontSize: 20, width: '100%' }}
-          onChange={(e) => setTxt(e.target.value.replace(/\D/g, '').slice(0, 3))} onBlur={commit} onKeyDown={(e) => { if (e.key === 'Enter') { commit(); (e.target as HTMLInputElement).blur(); } }} />
+          onChange={(e) => setTxt(e.target.value.replace(/\D/g, '').slice(0, 4))} onBlur={commit} onKeyDown={(e) => { if (e.key === 'Enter') { commit(); (e.target as HTMLInputElement).blur(); } }} />
         <button type="button" className="rc-opt" style={{ width: 40, height: 40, border: 0, fontSize: 22, flex: 'none' }} aria-label={`${label} +${step}`} disabled={value >= max} onClick={() => onCommit(value + step)}>+</button>
       </span>
     </label>
@@ -85,6 +88,8 @@ export default function Konstruktor({ t, s, set, go, notify }: StepProps) {
   const [sel, setSel] = useState(() => Math.max(0, draft.cols.findIndex((c) => isOpenable(c.open))));
   const [edit, setEdit] = useState<Edit>(null);
   const [show3d, setShow3d] = useState(false);
+  const winRef = useRef<HTMLDivElement>(null); // чертёж с размерами: реальный край окна на экране
+  const drag = useRef<{ axis: 'W' | 'H'; dx: number; dy: number; moved: boolean } | null>(null);
   const [boxRef, boxW] = useBox<HTMLDivElement>();
 
   const upd = (fn: (d: Item) => Item) => {
@@ -103,29 +108,61 @@ export default function Konstruktor({ t, s, set, go, notify }: StepProps) {
   const isDesk = useMedia('(min-width: 1024px)');
   const maxW = Math.max(120, (boxW || 340) - (isDesk ? 220 : 120));
   const maxH = isDesk ? 380 : 210;
-  const { w, h } = fit(draft, maxW, maxH);
+  const fitted = fit(draft, maxW, maxH);
+  const w = fitted.w;
+  const h = fitted.h;
   const g = geometry(draft, w, h);
   const ws = colWidths(draft);
   const price = priceOf(draft, { lvl: s.lvl }) * draft.qty;
+
+  // ---- ручки на концах размерных линий: тянем — размер меняется сразу. Каждое движение подтягивает край окна к пальцу
+  // (так ручка идёт за пальцем при любой раскладке, а когда чертёж упёрся в рамку и масштаб уменьшается — размер растёт плавно до 1000 см)
+  const startDrag = (axis: 'W' | 'H') => (e: React.PointerEvent<HTMLElement>) => {
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    const r = winRef.current?.getBoundingClientRect();
+    // смещение пальца от края окна: ручка не «прыгает» под палец
+    drag.current = { axis, dx: r ? e.clientX - r.right : 0, dy: r ? e.clientY - r.bottom : 0, moved: false };
+  };
+  const moveDrag = (e: React.PointerEvent<HTMLElement>) => {
+    const d = drag.current;
+    const r = winRef.current?.getBoundingClientRect();
+    if (!d || !r || !fitted.k) return;
+    if (!d.moved) { d.moved = true; setHist((hh) => [...hh.slice(-29), draft]); }
+    const err = d.axis === 'W' ? e.clientX - d.dx - r.right : e.clientY - d.dy - r.bottom; // px до пальца
+    const size = d.axis === 'W' ? draft.W : draft.H;
+    const lim = Math.max(2, Math.round(size * 0.04)); // не больше ~4% за событие: без рывков у больших размеров
+    const cm = size + Math.max(-lim, Math.min(lim, err / fitted.k));
+    set((st) => ({ ...st, draft: d.axis === 'W' ? setW(st.draft ?? draft, cm) : setH(st.draft ?? draft, cm) }));
+  };
+  const endDrag = () => { drag.current = null; };
+  const keyDim = (axis: 'W' | 'H') => (e: React.KeyboardEvent) => {
+    const inc = e.key === 'ArrowRight' || e.key === 'ArrowUp' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowDown' ? -1 : 0;
+    if (!inc) return;
+    e.preventDefault();
+    const stp = e.shiftKey ? 10 : 1;
+    upd((d) => (axis === 'W' ? setW(d, d.W + inc * stp) : setH(d, d.H + inc * stp)));
+  };
+  const minW = Math.max(LIMITS.W[0], draft.cols.length * LIMITS.col);
 
   const commit = () => {
     set((st) => {
       const d = st.draft ?? draft;
       const items = st.editId && st.items.some((x) => x.id === st.editId)
         ? st.items.map((x) => (x.id === st.editId ? { ...d, id: st.editId! } : x))
-        : [...st.items, { ...d, id: Math.random().toString(36).slice(2, 9) }];
+        : [...st.items, { ...d, id: Math.random().toString(36).slice(2, 9), ...(d.col || st.col ? { col: d.col ?? st.col } : {}) }];
       return { ...st, items, draft: null, editId: null };
     });
     track('item_add', { type: draft.tpl, w: draft.W, h: draft.H, qty: draft.qty });
   };
 
   const dims = (
-    <div className="relative" style={{ width: w, height: h }}>
+    <div ref={winRef} className="relative" style={{ width: w, height: h }}>
       {/* верх: ширины частей */}
       {draft.cols.length > 1 && (
         <div aria-label={t.equalHint}>
           <svg className="absolute" style={{ left: 0, top: -32, overflow: 'visible' }} width={w} height={20} aria-hidden="true">
-            <path d={`M0 10 H${w}`} stroke="#0077FF" strokeWidth="1.5" />
+            <path d={`M0 10 H${w}`} stroke="#0077FF" strokeWidth="1.25" strokeLinecap="round" className="rc-dim" />
           </svg>
           {[0, ...g.secs.slice(0, -1).map((sc) => sc.x + sc.w + g.t / 2), w].map((x, k) => (
             <button key={k} type="button" onClick={() => upd(equalize)} title={t.equalize} aria-label={t.equalize}
@@ -139,21 +176,27 @@ export default function Konstruktor({ t, s, set, go, notify }: StepProps) {
           ))}
         </div>
       )}
-      <WindowDrawing shape={draft} w={w} h={h} dark={dark} labels onGlass={(i) => { setSel(i); setTab('ochilish'); }} title={`${t.tpl[draft.tpl]}, ${draft.W} × ${draft.H} ${t.cm}`} />
+      <WindowDrawing shape={draft} w={w} h={h} color={itemCol(draft, s)} dark={dark} labels onGlass={(i) => { setSel(i); setTab('ochilish'); }} title={`${t.tpl[draft.tpl]}, ${draft.W} × ${draft.H} ${t.cm}`} />
       {/* выбранное стекло */}
       {tab === 'ochilish' && g.secs[selI] && (
         <div aria-hidden="true" className="pointer-events-none absolute" style={{ left: g.secs[selI].x - 2, top: g.secs[selI].y - 2, width: g.secs[selI].w + 4, height: g.secs[selI].h + 4, border: '3px solid #FFC529', borderRadius: 4, boxShadow: '0 0 0 3px rgba(255,197,41,.3)' }} />
       )}
       {/* справа: высота */}
       <svg className="absolute" style={{ left: w + 22, top: 0, overflow: 'visible' }} width={16} height={h} aria-hidden="true">
-        <path d={`M8 0 V${h} M2 0 H14 M2 ${h} H14`} stroke="#0077FF" strokeWidth="1.5" />
+        <path d={`M-22 0 H4 M-22 ${h} H4`} className="rc-ext" />
+        <path d={`M8 1 V${h - 1} M4 8 L8 1 L12 8 M4 ${h - 8} L8 ${h - 1} L12 ${h - 8}`} className="rc-dim" />
       </svg>
       <button type="button" className="rc-pill rc-num absolute" style={{ left: w + 30, top: h / 2, transform: 'translate(-50%,-50%)' }} onClick={() => setEdit({ k: 'H' })} aria-label={`${t.boyi}: ${draft.H} ${t.cm}`}>{draft.H}</button>
+      <div role="slider" tabIndex={0} aria-orientation="vertical" aria-label={t.boyi} aria-valuemin={LIMITS.H[0]} aria-valuemax={LIMITS.H[1]} aria-valuenow={draft.H} aria-valuetext={`${draft.H} ${t.cm}`}
+        className="rc-grip" style={{ left: w + 30, top: h, cursor: 'ns-resize' }} onPointerDown={startDrag('H')} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag} onKeyDown={keyDim('H')} />
       {/* снизу: общая ширина */}
       <svg className="absolute" style={{ left: 0, top: h + 18, overflow: 'visible' }} width={w} height={16} aria-hidden="true">
-        <path d={`M0 8 H${w} M0 2 V14 M${w} 2 V14`} stroke="#0077FF" strokeWidth="1.5" />
+        <path d={`M0 -18 V4 M${w} -18 V4`} className="rc-ext" />
+        <path d={`M1 8 H${w - 1} M8 4 L1 8 L8 12 M${w - 8} 4 L${w - 1} 8 L${w - 8} 12`} className="rc-dim" />
       </svg>
-      <button type="button" className="rc-pill solid rc-num absolute" style={{ left: w / 2, top: h + 26, transform: 'translate(-50%,-50%)' }} onClick={() => setEdit({ k: 'W' })} aria-label={`${t.eni}: ${draft.W} ${t.cm}`}>{draft.W} {t.cm}</button>
+      <button type="button" className="rc-pill solid rc-num absolute" style={{ left: Math.min(w / 2, w - 54), top: h + 26, transform: 'translate(-50%,-50%)' }} onClick={() => setEdit({ k: 'W' })} aria-label={`${t.eni}: ${draft.W} ${t.cm}`}>{draft.W} {t.cm}</button>
+      <div role="slider" tabIndex={0} aria-orientation="horizontal" aria-label={t.eni} aria-valuemin={minW} aria-valuemax={LIMITS.W[1]} aria-valuenow={draft.W} aria-valuetext={`${draft.W} ${t.cm}`}
+        className="rc-grip" style={{ left: w, top: h + 26, cursor: 'ew-resize' }} onPointerDown={startDrag('W')} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag} onKeyDown={keyDim('W')} />
     </div>
   );
 
@@ -269,6 +312,7 @@ export default function Konstruktor({ t, s, set, go, notify }: StepProps) {
           {tabs}
           {tabBody}
           {sizes}
+          <AppChip t={t} />
           {qtyRow}
           <div className="rc-bottom flex items-center gap-3" style={{ margin: '0 -16px', paddingTop: 12 }}>
             <div className="min-w-0 flex-1">{priceLine}</div>
@@ -286,6 +330,7 @@ export default function Konstruktor({ t, s, set, go, notify }: StepProps) {
           {tabBody}
           {sizes}
           {info}
+          <AppChip t={t} />
           <div style={{ marginTop: 'auto' }}>{priceBlock}</div>
         </div>
       </div>
@@ -302,7 +347,7 @@ export default function Konstruktor({ t, s, set, go, notify }: StepProps) {
             setEdit(null);
           }} />
       )}
-      {show3d && <View3D t={t} item={draft} col={null} onClose={() => setShow3d(false)} />}
+      {show3d && <View3D t={t} item={draft} col={itemCol(draft, s)} onClose={() => setShow3d(false)} />}
     </>
   );
 }
@@ -323,7 +368,7 @@ function EditDialog({ t, label, value, onSave, onClose }: { t: StepProps['t']; l
         <label className="flex flex-col gap-2">
           <span className="rc-disp" style={{ fontSize: 18 }}>{label}</span>
           <span className="rc-field">
-            <input ref={ref} inputMode="numeric" pattern="[0-9]*" value={v} onChange={(e) => setV(e.target.value.replace(/\D/g, '').slice(0, 3))}
+            <input ref={ref} inputMode="numeric" pattern="[0-9]*" value={v} onChange={(e) => setV(e.target.value.replace(/\D/g, '').slice(0, 4))}
               onKeyDown={(e) => e.key === 'Enter' && ok()} className="rc-disp rc-num" style={{ fontSize: 26 }} aria-label={`${label}, ${t.cm}`} />
             <span style={{ fontWeight: 600, color: 'var(--mute)' }}>{t.cm}</span>
           </span>

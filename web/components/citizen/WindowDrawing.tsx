@@ -7,6 +7,9 @@ import { colWidths, tpl, type Col, type Open, type TplId, type Uzor } from '@/li
 
 export const GLASS = '#80D4EC';
 export const OPEN_LINE = '#1F4FD8';
+/** золото раскладки */
+export const GOLD = '#D9A93A';
+export const GOLD_DK = '#9A6F12';
 
 export interface Shape { tpl: TplId; W: number; H: number; cols: Col[]; uzor?: Uzor }
 
@@ -97,13 +100,38 @@ export default function WindowDrawing({ shape, color = null, dark = false, w, h,
   const marks: { x: number; y: number; s: string }[] = [];
 
   const uzor = (gl: number, gt: number, gr: number, gb: number, key: string) => {
-    if (!shape.uzor || shape.uzor === 'none') return null;
-    const bw = Math.max(1.2, t * 0.22);
+    const u = shape.uzor;
+    if (!u || u === 'none') return null;
+    const bw = Math.max(1.4, t * 0.24);
     const out = [];
+    const bar = (k: string, x: number, y: number, w: number, h: number) => (
+      <rect key={k} x={x} y={y} width={w} height={h} fill={GOLD} stroke={GOLD_DK} strokeWidth={0.4} />
+    );
+    const cx = (gl + gr) / 2, cy = (gt + gb) / 2;
     const nv = Math.max(1, Math.round((gr - gl) / Math.max(40, (gb - gt) / 3)));
-    if (shape.uzor === 'v' || shape.uzor === 'grid') for (let k = 1; k <= nv; k++) { const x = gl + ((gr - gl) * k) / (nv + 1); out.push(<rect key={`${key}v${k}`} x={x - bw / 2} y={gt} width={bw} height={gb - gt} fill="#F4F6F9" opacity=".92" />); }
-    if (shape.uzor === 'h' || shape.uzor === 'grid') for (let k = 1; k <= 2; k++) { const y = gt + ((gb - gt) * k) / 3; out.push(<rect key={`${key}h${k}`} x={gl} y={y - bw / 2} width={gr - gl} height={bw} fill="#F4F6F9" opacity=".92" />); }
+    if (u === 'v' || u === 'grid') for (let k = 1; k <= nv; k++) { const x = gl + ((gr - gl) * k) / (nv + 1); out.push(bar(`${key}v${k}`, x - bw / 2, gt, bw, gb - gt)); }
+    if (u === 'h' || u === 'grid') for (let k = 1; k <= 2; k++) { const y = gt + ((gb - gt) * k) / 3; out.push(bar(`${key}h${k}`, gl, y - bw / 2, gr - gl, bw)); }
+    if (u === 'cross') { out.push(bar(`${key}cv`, cx - bw / 2, gt, bw, gb - gt)); out.push(bar(`${key}ch`, gl, cy - bw / 2, gr - gl, bw)); }
     return out;
+  };
+
+  /** стекло: градиент, косой блик (один раз пробегает) и фаска (тень сверху-слева, свет снизу-справа) */
+  const glass = (gl: number, gt: number, gr: number, gb: number, key: string) => {
+    const w = gr - gl, h = gb - gt, cid = `cp${uid}${key}`, b = Math.max(1, t * 0.14);
+    return (
+      <g key={`gl${key}`}>
+        <rect x={gl} y={gt} width={w} height={h} fill={`url(#gl${uid})`} stroke={line} strokeWidth={sw} />
+        <clipPath id={cid}><rect x={gl} y={gt} width={w} height={h} /></clipPath>
+        <g clipPath={`url(#${cid})`}>
+          <g className="rc-gloss" style={{ transformBox: 'fill-box' }}>
+            <path d={`M${gl + w * 0.12} ${gb} L${gl + w * 0.34} ${gb} L${gl + w * 0.88} ${gt} L${gl + w * 0.66} ${gt}Z`} fill="#fff" opacity=".26" />
+            <path d={`M${gl + w * 0.4} ${gb} L${gl + w * 0.47} ${gb} L${gl + w * 0.99} ${gt} L${gl + w * 0.92} ${gt}Z`} fill="#fff" opacity=".16" />
+          </g>
+        </g>
+        <path d={`M${gl} ${gb} V${gt} H${gr}`} fill="none" stroke="rgba(0,0,0,.28)" strokeWidth={b * 1.4} />
+        <path d={`M${gr} ${gt} V${gb} H${gl}`} fill="none" stroke="rgba(255,255,255,.4)" strokeWidth={b} />
+      </g>
+    );
   };
 
   const sections = secs.map((s, i) => {
@@ -122,7 +150,7 @@ export default function WindowDrawing({ shape, color = null, dark = false, w, h,
       const ins = t * 0.82;
       pane.push(<rect key="so" x={s.x + 1} y={s.y + 1} width={s.w - 2} height={bottom - s.y - 2} fill="none" stroke={line} strokeWidth={sw} />);
       gl = s.x + ins; gt = s.y + ins; gr = s.x + s.w - ins; gb = bottom - ins;
-      pane.push(<rect key="g" x={gl} y={gt} width={gr - gl} height={gb - gt} fill={GLASS} stroke={line} strokeWidth={sw} />);
+      pane.push(glass(gl, gt, gr, gb, `s${i}`));
       if (sash) {
         pane.push(<path key="o" d={openPath(o, gl, gt, gr, gb)} fill="none" stroke={OPEN_LINE} strokeWidth={Math.max(1, t * 0.11)} />);
         const hw = Math.max(2, t * 0.42), hh = Math.max(6, (gb - gt) * 0.13);
@@ -143,7 +171,7 @@ export default function WindowDrawing({ shape, color = null, dark = false, w, h,
     } else {
       const ins = Math.max(1.4, t * 0.3);
       gl = s.x + ins; gt = s.y + ins; gr = s.x + s.w - ins; gb = bottom - ins;
-      pane.push(<rect key="g" x={gl} y={gt} width={gr - gl} height={gb - gt} fill={GLASS} stroke={line} strokeWidth={sw} />);
+      pane.push(glass(gl, gt, gr, gb, `f${i}`));
     }
     pane.push(...(uzor(gl, gt, gr, gb, `u${i}`) ?? []));
     marks.push({ x: (gl + gr) / 2, y: (gt + gb) / 2, s: label });
@@ -170,21 +198,26 @@ export default function WindowDrawing({ shape, color = null, dark = false, w, h,
 
   const arch = archR ? (
     <g>
-      <path d={`M${t} ${archR - t / 2} A${W / 2 - t} ${archR - t} 0 0 1 ${W - t} ${archR - t / 2} Z`} fill={GLASS} stroke={line} strokeWidth={sw} />
+      <path d={`M${t} ${archR - t / 2} A${W / 2 - t} ${archR - t} 0 0 1 ${W - t} ${archR - t / 2} Z`} fill={`url(#gl${uid})`} stroke={line} strokeWidth={sw} />
     </g>
   ) : null;
 
   return (
     <div className={`rc-win ${className}`} style={{ position: 'relative', width: W, height: H, flex: 'none', ...style }} role={title ? 'img' : undefined} aria-label={title} aria-hidden={title ? undefined : true}>
       <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', overflow: 'visible' }}>
-        {col && col !== 'oq' && (
-          <defs>
+        <defs>
+          <linearGradient id={`gl${uid}`} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="#B4E8F8" /><stop offset=".55" stopColor={GLASS} /><stop offset="1" stopColor="#62BCDB" />
+          </linearGradient>
+          {col && col !== 'oq' && (
             <pattern id={`tx${uid}`} patternUnits="userSpaceOnUse" width="120" height="120">
               <image href={`/colors/${col}.webp`} width="120" height="120" preserveAspectRatio="xMidYMid slice" />
             </pattern>
-          </defs>
-        )}
+          )}
+        </defs>
         <path d={outer} fill={frameFill} stroke={line} strokeWidth={sw} />
+        {!archR && <path d={`M${sw} ${H - sw} V${sw} H${W - sw}`} fill="none" stroke="rgba(255,255,255,.28)" strokeWidth={Math.max(1, t * 0.16)} />}
+        {!archR && <path d={`M${W - sw} ${sw} V${H - sw} H${sw}`} fill="none" stroke="rgba(0,0,0,.22)" strokeWidth={Math.max(1, t * 0.16)} />}
         {arch}
         {sections}
       </svg>

@@ -10,6 +10,7 @@ import {
 import type { Dict, Lang } from '@/lib/i18n';
 import { track } from '@/lib/analytics';
 import { LINKS } from '@/lib/i18n';
+import { logoSvgString } from '@/lib/brand';
 
 interface Cmp { key: string; name: string; size: string; prof: string; col: string; uzs: string }
 
@@ -95,10 +96,10 @@ export default function Demo({ t, send, lang, rate = DEFAULT_RATE, compact = fal
 <style>@page{size:A4;margin:16mm}body{font-family:Manrope,Arial,sans-serif;color:#0B1530;margin:0}
 h1{font-size:22px;margin:0 0 4px}.m{color:#5B6478;font-size:13px;margin:0 0 18px}
 .logo{font-weight:800;font-size:26px;letter-spacing:-.04em;margin-bottom:14px}.logo b{background:#0A6CFF;color:#fff;border-radius:7px;padding:0 6px 2px}
-.svg{background:#DCE3EC;border-radius:14px;padding:8px;margin-bottom:16px}svg{width:100%;height:auto;max-height:330px}
+.svg{background:#DCE3EC;border-radius:14px;padding:8px;margin-bottom:16px}.svg svg{width:100%;height:auto;max-height:330px}
 .lbl{font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#5B6478;margin-top:6px}
 .tot{font-size:30px;font-weight:800;color:#0077FF;margin:4px 0 2px}.n{margin-top:18px;font-size:12px;color:#5B6478;background:#FFF6DE;padding:10px 12px;border-radius:10px}</style></head>
-<body><div class="logo">Rom<b>chi</b></div><h1>${t.pdfTitle}</h1>
+<body><div class="logo">${logoSvgString(30)}</div><h1>${t.pdfTitle}</h1>
 <p class="m">${tname} · ${s.W} × ${s.H} mm · ${pname} · ${cname} · ${r.area.toFixed(2)} m² · ${date}</p>
 <div class="svg">${svg}</div>
 <div class="lbl">${t.total}</div><div class="tot">${uzs} ${lang === 'ru' ? 'сум' : 'soʻm'}</div>

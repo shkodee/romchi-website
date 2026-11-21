@@ -7,8 +7,8 @@ export type Open = 'fix' | 'turnL' | 'turnR' | 'tilt' | 'ttL' | 'ttR' | 'slideL'
 export const OPENS: Open[] = ['turnL', 'turnR', 'tilt', 'ttL', 'ttR', 'fix'];
 export const isOpenable = (o: Open) => o !== 'fix';
 
-export type Uzor = 'none' | 'v' | 'h' | 'grid';
-export const UZORS: Uzor[] = ['none', 'v', 'h', 'grid'];
+export type Uzor = 'none' | 'v' | 'h' | 'grid' | 'cross';
+export const UZORS: Uzor[] = ['none', 'v', 'h', 'grid', 'cross'];
 
 export interface Col {
   /** доля общей ширины */
@@ -45,9 +45,8 @@ export const TEMPLATES: Template[] = [
   { id: 'd1t', cat: 'deraza', W: 70, H: 60, cols: [{ f: 1, open: 'tilt' }] },
   { id: 'bb', cat: 'balkon', W: 210, H: 210, cols: [{ f: 0.34, open: 'turnL' }, { f: 0.66, open: 'fix', panel: 0.42 }] },
   { id: 'bb2', cat: 'balkon', W: 210, H: 210, cols: [{ f: 0.66, open: 'fix', panel: 0.42 }, { f: 0.34, open: 'turnR' }] },
-  { id: 'es', cat: 'eshik', W: 90, H: 210, cols: [{ f: 1, open: 'turnL', panel: 0.45 }] },
-  { id: 'es2', cat: 'eshik', W: 160, H: 210, cols: [{ f: 0.5, open: 'turnL', panel: 0.45 }, { f: 0.5, open: 'turnR', panel: 0.45 }] },
-  { id: 'esg', cat: 'eshik', W: 90, H: 210, cols: [{ f: 1, open: 'turnL' }] },
+  { id: 'es', cat: 'eshik', W: 90, H: 210, cols: [{ f: 1, open: 'turnL' }] },
+  { id: 'es2', cat: 'eshik', W: 160, H: 210, cols: [{ f: 0.5, open: 'turnL' }, { f: 0.5, open: 'turnR' }] },
   { id: 'sl', cat: 'boshqa', W: 200, H: 150, cols: [{ f: 0.5, open: 'slideR' }, { f: 0.5, open: 'slideL' }] },
   { id: 'vt', cat: 'boshqa', W: 240, H: 200, cols: [{ f: 0.5, open: 'fix' }, { f: 0.5, open: 'fix' }] },
   { id: 'ar', cat: 'boshqa', W: 140, H: 180, arch: true, cols: [{ f: 0.5, open: 'fix' }, { f: 0.5, open: 'turnR' }] },
@@ -57,7 +56,7 @@ export const MAIN_TYPES: TplId[] = ['d1', 'd2', 'd3', 'bb', 'es', 'ar'];
 export const tpl = (id: TplId) => TEMPLATES.find((t) => t.id === id) ?? TEMPLATES[1];
 export const isTpl = (x: unknown): x is TplId => TEMPLATES.some((t) => t.id === x);
 
-export const LIMITS = { W: [30, 400], H: [30, 300], col: 20 } as const;
+export const LIMITS = { W: [30, 1000], H: [30, 1000], col: 20 } as const;
 export const QUICK: [number, number][] = [[100, 100], [130, 140], [150, 150], [190, 150], [210, 210]];
 
 // ---- цвета профиля: Oq + 17 из приложения (текстуры в /public/colors)
@@ -90,6 +89,8 @@ export interface Item {
   cols: Col[];
   uzor: Uzor;
   qty: number;
+  /** цвет профиля этого изделия (id из COLORS); нет — берётся общий s.col */
+  col?: string | null;
 }
 
 export const newItem = (id: TplId, W?: number, H?: number): Item => {

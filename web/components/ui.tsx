@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { LINKS, type Dict } from '@/lib/i18n';
+import LogoMark from './LogoMark';
 
 // Скриншоты: сейчас подписанные заглушки .svg. Положите реальные картинки
 // в public/screens/<имя>.jpg и поменяйте SCREEN_EXT на 'jpg' (или пропишите расширение по ключу).
@@ -15,16 +16,11 @@ export function Shot({ k, alt, className = '', eager = false }: { k: ScreenKey; 
   return <img src={screen(k)} alt={alt} className={className} loading={eager ? 'eager' : 'lazy'} decoding="async" />;
 }
 
-export function Logo({ size = 28, light = false, star = true }: { size?: number; light?: boolean; star?: boolean }) {
+/** Оригинальный логотип Romchi (logo.svg команды): «Rom» тёмно-синее или белое (light) */
+export function Logo({ size = 28, light = false }: { size?: number; light?: boolean; star?: boolean }) {
   return (
-    <span className="relative inline-flex items-center gap-1 font-extrabold tracking-[-0.04em]" style={{ fontSize: size }}>
-      <span className={light ? 'text-white' : 'text-navy'}>Rom</span>
-      <span className="rounded-[9px] bg-brand px-2 pb-0.5 leading-[1.25] text-white">chi</span>
-      {star && (
-        <svg width={size / 2} height={size / 2} viewBox="0 0 24 24" aria-hidden="true" className="absolute -right-[9px] -top-[5px]">
-          <path d="M12 0l2.6 9.4L24 12l-9.4 2.6L12 24l-2.6-9.4L0 12l9.4-2.6z" fill="#FFC529" />
-        </svg>
-      )}
+    <span className={light ? "text-white" : "text-navy"} style={{ display: "inline-flex" }}>
+      <LogoMark height={Math.round(size * 1.25)} />
     </span>
   );
 }

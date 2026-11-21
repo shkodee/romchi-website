@@ -6,7 +6,9 @@ import { cdict, type CDict } from '@/lib/citizen/i18n';
 import { BRANDS, MAIN_TYPES, fmt, shapeOf, tpl, type TplId } from '@/lib/citizen/model';
 import { captureUtm, track } from '@/lib/analytics';
 import WindowDrawing from './WindowDrawing';
-import { Balls, LangSwitch, Logo, useDark } from './ui';
+import HeroWindow from './HeroWindow';
+import { AppTeaser } from './AppLinks';
+import { Balls, LangSwitch, Logo, ThemeToggle, useDark, useMedia } from './ui';
 
 const HERO_H = 140;
 const heroPrice = (W: number) => Math.round((((W * HERO_H) / 10000) * 2140000) / 50000) * 50000;
@@ -17,6 +19,7 @@ export default function Main({ lang }: { lang: Lang }) {
   const t = cdict(lang);
   const [W, setW] = useState(130);
   const dark = useDark();
+  const isDesk = useMedia('(min-width: 1024px)'); // 3D рисуем только в видимой версии hero
   const price = fmt(heroPrice(W));
   const base = `/${lang}/maket/`;
   useEffect(() => { captureUtm(); track('ViewContent', { page: 'main' }); }, []);
@@ -24,19 +27,13 @@ export default function Main({ lang }: { lang: Lang }) {
   const scene = (big: boolean) => {
     const h = big ? 250 : 170;
     const w = Math.round(W * (big ? 1.7 : 1.15));
-    const frame = { w: w + 40, h: h + 40 };
     return (
       <div className="relative flex items-center justify-center" style={{ height: big ? 520 : 300 }}>
         <Balls items={big
           ? [{ c: 'b', s: 96, style: { left: '2%', top: '6%' }, f: 2 }, { c: 'y', s: 44, style: { left: '4%', top: '58%' } }, { c: 'b', s: 18, style: { right: '36%', top: '0%' }, f: 3 }, { c: 'y', s: 24, style: { right: '24%', bottom: '8%' }, f: 2 }]
           : [{ c: 'b', s: 56, style: { left: '5%', top: '8%' }, f: 2 }, { c: 'y', s: 30, style: { left: '7%', top: '58%' } }, { c: 'b', s: 18, style: { right: '40%', top: '3%' }, f: 3 }, { c: 'y', s: 16, style: { right: '22%', bottom: '4%' }, f: 2 }]} />
-        <svg className="rc-draw absolute left-1/2 top-1/2" width={frame.w} height={frame.h} viewBox={`0 0 ${frame.w} ${frame.h}`} style={{ marginLeft: -frame.w / 2, marginTop: -frame.h / 2, transition: 'all .18s var(--e-out)' }} aria-hidden="true">
-          <rect x="20" y="20" width={frame.w - 40} height={frame.h - 40} rx="4" fill="none" stroke="#0077FF" strokeWidth="1.5" />
-          <path d={`M0 20 H${frame.w} M0 ${frame.h - 20} H${frame.w} M20 0 V${frame.h} M${frame.w - 20} 0 V${frame.h}`} stroke="#7FB4FF" strokeWidth="1" fill="none" />
-        </svg>
-        <div className="rc-reveal relative" style={{ filter: 'drop-shadow(0 18px 22px rgba(11,21,48,.25))' }}>
-          <WindowDrawing shape={{ ...shapeOf(tpl('d2')), W, H: HERO_H }} w={w} h={h} dark={dark} labels swing title={`${t.tpl.d2}, ${W} × ${HERO_H} ${t.cm}`} />
-        </div>
+        <HeroWindow W={W} H={HERO_H} w={w} h={h} dark={dark} live={big === isDesk}
+          fallback={<WindowDrawing shape={{ ...shapeOf(tpl('d2')), W, H: HERO_H }} w={w} h={h} dark={dark} labels swing title={`${t.tpl.d2}, ${W} × ${HERO_H} ${t.cm}`} />} />
         <div className="rc-fcard rc-pop rc-price rc-shine" style={{ ['--r' as string]: '-6deg', ['--d' as string]: '1.1s', right: '3%', top: big ? '8%' : '1%' }}>
           <div style={{ fontSize: big ? 13 : 11.5, fontWeight: 700, letterSpacing: '.06em', color: '#5A3D00' }}>{t.approx}</div>
           <div className="rc-disp rc-num" style={{ fontSize: big ? 30 : 21, lineHeight: 1.15 }} aria-live="polite">{price} <span style={{ fontSize: big ? 15 : 12 }}>{t.sum}</span></div>
@@ -81,6 +78,7 @@ export default function Main({ lang }: { lang: Lang }) {
         <div className="flex items-center gap-4">
           <Link href={`/${lang}/ustalar/`} className="hidden md:inline" style={{ color: 'var(--ink)', fontWeight: 600, fontSize: 15 }}>{t.forMastersShort}</Link>
           <LangSwitch lang={lang} label={t.lang} />
+          <ThemeToggle label={t.theme} />
         </div>
       </header>
 
@@ -119,6 +117,8 @@ export default function Main({ lang }: { lang: Lang }) {
           </div>
           <p className="rc-hint" style={{ textAlign: 'center', fontWeight: 600, margin: '6px 0 0' }}>{t.trust}</p>
         </section>
+
+        <AppTeaser t={t} />
 
         <div style={{ marginTop: 40 }} aria-hidden="true">
           <div className="rc-marq-band">
