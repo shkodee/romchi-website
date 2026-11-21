@@ -10,8 +10,8 @@ export default function Header({ t, lang }: { t: Dict['nav']; lang: Lang }) {
   const path = usePathname() || `/${lang}/`;
   const other: Lang = lang === 'uz' ? 'ru' : 'uz';
   const otherPath = path.replace(/^\/(uz|ru)(?=\/|$)/, `/${other}`);
-  const home = `/${lang}/`;
-  const onHome = path === home || path === `/${lang}`;
+  const home = `/${lang}/ustalar/`;
+  const onHome = path === home || path === `/${lang}/ustalar`;
   const anchor = (id: string) => (onHome ? `#${id}` : `${home}#${id}`);
 
   useEffect(() => { setOpen(false); }, [path]);
@@ -31,7 +31,7 @@ export default function Header({ t, lang }: { t: Dict['nav']; lang: Lang }) {
         <Link href={home} aria-label={t.home} className="focus-ring rounded-lg no-underline"><Logo size={26} /></Link>
         <nav aria-label={t.menu} className="hidden gap-7 lg:flex">
           {links.map(([id, label]) => (
-            <a key={id} href={id === 'sinab' ? `${home}sinab/` : anchor(id)} className="focus-ring rounded text-[15px] font-bold text-navy no-underline hover:text-brand-deep">{label}</a>
+            <a key={id} href={id === 'sinab' ? `/${lang}/sinab/` : anchor(id)} className="focus-ring rounded text-[15px] font-bold text-navy no-underline hover:text-brand-deep">{label}</a>
           ))}
         </nav>
         <div className="flex items-center gap-2.5">
@@ -54,7 +54,7 @@ export default function Header({ t, lang }: { t: Dict['nav']; lang: Lang }) {
       {open && (
         <nav id="mnav" aria-label={t.menu} className="wrap flex flex-col gap-1 pb-5 lg:hidden">
           {links.map(([id, label]) => (
-            <a key={id} href={id === 'sinab' ? `${home}sinab/` : anchor(id)} onClick={() => setOpen(false)}
+            <a key={id} href={id === 'sinab' ? `/${lang}/sinab/` : anchor(id)} onClick={() => setOpen(false)}
               className="focus-ring rounded-2xl bg-white px-5 py-4 text-lg font-extrabold text-navy no-underline">{label}</a>
           ))}
           <a href={anchor('yukla')} onClick={() => setOpen(false)} className="btn btn-blue mt-2">{t.download}</a>

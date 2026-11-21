@@ -1,0 +1,73 @@
+'use client';
+import { useEffect, useState } from 'react';
+import { BRANDS, COLORS, COLOR_NAMES, LEVELS } from '@/lib/citizen/model';
+import { track } from '@/lib/analytics';
+import WindowDrawing from '../WindowDrawing';
+import { I, useDark } from '../ui';
+import type { StepProps } from '../Flow';
+
+export default function Rang({ t, s, set, go }: StepProps) {
+  const dark = useDark();
+  const [open, setOpen] = useState(!!s.brand);
+  const it = s.items[0];
+  useEffect(() => { if (!s.col) set((st) => ({ ...st, col: 'c01' })); }, [s.col, set]);
+  if (!it) return null;
+  return (
+    <div className="flex flex-1 flex-col lg:mx-auto lg:w-full lg:max-w-[1100px] lg:flex-row lg:gap-8 lg:px-10 lg:py-8">
+      <div className="flex items-center justify-center lg:flex-1 lg:rounded-3xl" style={{ minHeight: 220, padding: '24px 16px 36px' }}>
+        <div style={{ filter: 'drop-shadow(0 18px 22px rgba(11,21,48,.22))' }}>
+          <WindowDrawing shape={it} maxW={260} maxH={180} color={s.col} dark={dark} labels title={`${t.tpl[it.tpl]}, ${COLOR_NAMES[s.col ?? 'oq']}`} />
+          <div aria-hidden="true" style={{ height: 6, margin: '0 -10px', background: 'var(--line2)', borderRadius: 3 }} />
+        </div>
+      </div>
+      <div className="rc-sheet flex flex-1 flex-col gap-5 lg:rounded-3xl" style={{ padding: '20px 18px 0' }}>
+        <section className="flex flex-col gap-3" aria-labelledby="rang-h">
+          <div className="flex items-baseline justify-between gap-3">
+            <h1 id="rang-h" className="rc-disp" style={{ margin: 0, fontSize: 20 }}>{t.rang}</h1>
+            <span style={{ fontWeight: 600, fontSize: 14.5, color: 'var(--ink2)', textAlign: 'right' }}>{COLOR_NAMES[s.col ?? 'oq']}</span>
+          </div>
+          <div className="grid gap-2.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(44px, 1fr))', justifyItems: 'center' }} role="group" aria-label={t.rang}>
+            {COLORS.map((c) => (
+              <button key={c.id} type="button" className="rc-swatch" aria-pressed={s.col === c.id} aria-label={COLOR_NAMES[c.id]} title={COLOR_NAMES[c.id]}
+                style={c.id === 'oq' ? { background: '#F4F6F9' } : { backgroundImage: `url(/colors/${c.id}.webp)`, backgroundColor: c.avg }}
+                onClick={() => { set((st) => ({ ...st, col: c.id })); track('color_pick', { color: c.id }); }} />
+            ))}
+          </div>
+        </section>
+        <section className="flex flex-col gap-3" aria-labelledby="lvl-h">
+          <h2 id="lvl-h" className="rc-disp" style={{ margin: 0, fontSize: 20 }}>{t.lvlTitle}</h2>
+          <div className="grid grid-cols-3 gap-2">
+            {LEVELS.map((l) => {
+              const on = s.lvl === l;
+              return (
+                <button key={l} type="button" aria-pressed={on} onClick={() => { set((st) => ({ ...st, lvl: l })); track('level_pick', { level: l }); }}
+                  className="flex flex-col items-start gap-1 text-left"
+                  style={{ padding: '12px 12px', borderRadius: 14, cursor: 'pointer', border: on ? '2px solid #0077FF' : '1.5px solid var(--line)', background: on ? 'var(--soft)' : 'var(--card)', boxShadow: on ? '0 0 0 4px rgba(0,119,255,.12)' : 'none', transition: 'transform .14s var(--e-out)' }}>
+                  <b style={{ fontSize: 16 }}>{t.lvl[l][0]}</b>
+                  <span style={{ fontSize: 12.5, color: 'var(--mute)', lineHeight: 1.3 }}>{t.lvl[l][1]}</span>
+                </button>
+              );
+            })}
+          </div>
+          <button type="button" className="rc-link flex items-center justify-between" aria-expanded={open} onClick={() => setOpen(!open)} style={{ fontSize: 16, fontWeight: 700, minHeight: 44 }}>
+            {s.brand ? `${t.brand}: ${s.brand}` : t.brandMine}
+            <span style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .2s var(--e-out)', display: 'flex' }}>{I.chev()}</span>
+          </button>
+          {open && (
+            <div className="flex flex-col gap-2.5">
+              <div className="flex flex-wrap gap-2">
+                {BRANDS.map((b) => (
+                  <button key={b} type="button" className="rc-chip" aria-pressed={s.brand === b} onClick={() => { set((st) => ({ ...st, brand: st.brand === b ? null : b })); track('brand_pick', { brand: b }); }}>{b}</button>
+                ))}
+              </div>
+              <p className="rc-hint" style={{ margin: 0 }}>{t.brandNote}</p>
+            </div>
+          )}
+        </section>
+        <div className="rc-bottom" style={{ margin: '0 -18px', marginTop: 'auto' }}>
+          <button type="button" className="rc-cta" onClick={() => go('narx')}>{t.seePrice} {I.arrow()}</button>
+        </div>
+      </div>
+    </div>
+  );
+}

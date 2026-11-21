@@ -16,10 +16,27 @@ npm run build      # статический сайт в out/ (можно пол�
 | Путь | Что |
 |---|---|
 | `/` | редирект на `/uz/` или `/ru/` по языку браузера (на своём сервере лучше 302 в nginx) |
-| `/uz/`, `/ru/` | главная: hero с 3D-окном, бегущая строка, 6 story-блоков, экраны, «Sinab koʻring», шаги, для кого, Premium, FAQ, заявка |
-| `/uz/sinab/`, `/ru/sinab/` | демо-калькулятор |
+| `/uz/`, `/ru/` | **сайт для граждан**: «Derazangiz narxini 1 daqiqada bilib oling», ползунок ширины, 6 типов (DESIGN.md) |
+| `/uz/maket/?q=turi…tayyor` | путь гражданина: Namunalar → Konstruktor → Buyurtma → Rang → Narx → Hudud → Ustalar → Tayyor |
+| `/uz/ustalar/`, `/ru/ustalar/` | старая главная для мастеров (hero с 3D, story-блоки, Premium, FAQ) |
+| `/uz/sinab/`, `/ru/sinab/` | старый демо-калькулятор для мастеров |
 
 ## Структура
+
+Сайт для граждан:
+```
+components/citizen/Main.tsx         главная для граждан
+components/citizen/Flow.tsx         путь по шагам (?q=…), шапка с 5 сегментами, тосты (sonner)
+components/citizen/steps/*.tsx      Namunalar, Konstruktor, Buyurtma, Rang, Narx, Hudud, Ustalar, Tayyor
+components/citizen/WindowDrawing.tsx окно/дверь/арка «как в приложении» (SVG, текстура цвета)
+components/citizen/View3D.tsx       лёгкий 3D-вид (CSS), полное 3D/AR — в приложении
+lib/citizen/model.ts                шаблоны (16), цвета (18), уровни, бренды, ДЕМО-цена priceOf()
+lib/citizen/store.ts                состояние (localStorage) и ссылка «Ulashish» (?m=…)
+lib/citizen/i18n.ts                 тексты uz/ru
+app/citizen.css                     стили rc-* (светлая и тёмная тема)
+```
+
+Сайт для мастеров (старый):
 
 ```
 app/[lang]/layout.tsx      шапка, футер, SEO (hreflang, Open Graph, JSON-LD), Motion, Tracker

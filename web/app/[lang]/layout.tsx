@@ -1,28 +1,37 @@
 import '../globals.css';
+import '../citizen.css';
 import type { Metadata, Viewport } from 'next';
-import '@fontsource-variable/manrope'; // Manrope локально: latin, latin-ext (oʻ, gʻ), cyrillic
+import '@fontsource-variable/manrope'; // сайт для мастеров
+import '@fontsource-variable/onest'; // сайт для граждан: текст
+import '@fontsource/unbounded/700.css'; // сайт для граждан: заголовки и цифры
 import { notFound } from 'next/navigation';
-import Header from '@/components/Header';
-import Motion from '@/components/Motion';
 import Tracker from '@/components/Tracker';
-import { Logo } from '@/components/ui';
-import { LANGS, LINKS, getDict, isLang } from '@/lib/i18n';
+import { LANGS, LINKS, isLang } from '@/lib/i18n';
+import { cdict } from '@/lib/citizen/i18n';
+
+// Meta Pixel ID — в .env (NEXT_PUBLIC_META_PIXEL_ID). Пусто — пиксель не грузится.
+const PIXEL = (process.env.NEXT_PUBLIC_META_PIXEL_ID ?? '').replace(/\D/g, '');
 
 export const dynamicParams = false;
 export const generateStaticParams = () => LANGS.map((lang) => ({ lang }));
 
-export const viewport: Viewport = { themeColor: '#0A6CFF', width: 'device-width', initialScale: 1 };
+export const viewport: Viewport = {
+  themeColor: [{ media: '(prefers-color-scheme: dark)', color: '#0F1013' }, { color: '#F3F6FC' }],
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+};
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
   if (!isLang(lang)) return {};
-  const d = getDict(lang);
+  const t = cdict(lang);
   return {
     metadataBase: new URL(LINKS.site),
-    title: d.meta.title,
-    description: d.meta.description,
+    title: t.meta.title,
+    description: t.meta.desc,
     alternates: { canonical: `/${lang}/`, languages: { uz: '/uz/', ru: '/ru/', 'x-default': '/uz/' } },
-    openGraph: { type: 'website', siteName: 'Romchi', title: d.meta.title, description: d.meta.description, locale: lang === 'ru' ? 'ru_RU' : 'uz_UZ', url: `/${lang}/` },
+    openGraph: { type: 'website', siteName: 'Romchi', title: t.meta.title, description: t.meta.desc, locale: lang === 'ru' ? 'ru_RU' : 'uz_UZ', url: `/${lang}/` },
     icons: { icon: '/favicon.svg' },
   };
 }
@@ -30,38 +39,19 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 export default async function LangLayout({ children, params }: { children: React.ReactNode; params: Promise<{ lang: string }> }) {
   const { lang } = await params;
   if (!isLang(lang)) notFound();
-  const d = getDict(lang);
-  const ld = {
-    '@context': 'https://schema.org',
-    '@type': 'SoftwareApplication',
-    name: 'Romchi',
-    applicationCategory: 'BusinessApplication',
-    operatingSystem: 'Android, iOS',
-    inLanguage: lang,
-    description: d.meta.description,
-    offers: { '@type': 'Offer', price: '0', priceCurrency: 'UZS' },
-  };
+  const t = cdict(lang);
   return (
     <html lang={lang}>
       <head>
-        {/* reveal-анимации включаются только с JS; если GSAP не загрузился за 3 с — показываем всё */}
+        {/* reveal-анимации сайта мастеров включаются только с JS; если GSAP не загрузился за 3 с — показываем всё */}
+        {PIXEL && (
+          <script dangerouslySetInnerHTML={{ __html: `!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${PIXEL}');fbq('track','PageView');` }} />
+        )}
         <script dangerouslySetInnerHTML={{ __html: `document.documentElement.classList.add('js');setTimeout(function(){if(!window.__motion)document.documentElement.classList.remove('js')},3000)` }} />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
       </head>
-      <body className="overflow-x-clip font-sans antialiased">
-        <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-sun focus:px-4 focus:py-3 focus:font-extrabold">
-          {lang === 'ru' ? 'К содержанию' : 'Asosiy qismga oʻtish'}
-        </a>
-        <Header t={d.nav} lang={lang} />
-        <main id="main" className="overflow-x-clip">{children}</main>
-        <footer className="bg-navy py-10 text-[#B8C2D6]">
-          <div className="wrap flex flex-wrap items-center justify-between gap-6 text-sm">
-            <Logo size={22} light star={false} />
-            <span>{d.footer.slogan}</span>
-            <span>© 2026 Romchi · {d.footer.domain}</span>
-          </div>
-        </footer>
-        <Motion />
+      <body className="overflow-x-clip antialiased">
+        <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-sun focus:px-4 focus:py-3 focus:font-extrabold">{t.skip}</a>
+        {children}
         <Tracker />
       </body>
     </html>

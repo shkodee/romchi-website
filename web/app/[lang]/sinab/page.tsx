@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Demo from '@/components/demo/Demo';
 import { Pill, StoreButtons } from '@/components/ui';
+import MasterShell from '@/components/MasterShell';
 import { getDict, isLang } from '@/lib/i18n';
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
@@ -22,9 +23,10 @@ export default async function DemoPage({ params }: { params: Promise<{ lang: str
   const d = getDict(lang);
   const t = d.demo;
   return (
+    <MasterShell lang={lang}>
     <div className="g-light py-10 sm:py-16">
       <div className="wrap flex flex-col gap-6">
-        <Link href={`/${lang}/`} className="focus-ring self-start rounded text-sm font-bold text-brand-deep no-underline">{t.back}</Link>
+        <Link href={`/${lang}/ustalar/`} className="focus-ring self-start rounded text-sm font-bold text-brand-deep no-underline">{t.back}</Link>
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="flex flex-col gap-4">
             <Pill>{t.pill}</Pill>
@@ -46,5 +48,6 @@ export default async function DemoPage({ params }: { params: Promise<{ lang: str
         </div>
       </div>
     </div>
+    </MasterShell>
   );
 }

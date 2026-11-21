@@ -4,7 +4,7 @@
 type Params = Record<string, string | number | boolean | undefined>;
 
 declare global {
-  interface Window { dataLayer?: unknown[]; ym?: (...a: unknown[]) => void }
+  interface Window { dataLayer?: unknown[]; ym?: (...a: unknown[]) => void; fbq?: (...a: unknown[]) => void }
 }
 
 export function track(event: string, params: Params = {}) {
@@ -12,5 +12,19 @@ export function track(event: string, params: Params = {}) {
   (window.dataLayer ||= []).push({ event, ...params });
   const ymId = process.env.NEXT_PUBLIC_YM_ID;
   if (ymId && window.ym) window.ym(Number(ymId), 'reachGoal', event, params);
+  // Meta Pixel (реклама в Instagram): стандартные события + свои шаги воронки
+  if (window.fbq) {
+    if (event === 'ViewContent' || event === 'Lead') window.fbq('track', event, params);
+    else window.fbq('trackCustom', event, params);
+  }
   if (process.env.NODE_ENV === 'development') console.debug('[track]', event, params);
+}
+
+/** UTM и fbclid из рекламы — в sessionStorage, уходят вместе с заявкой */
+export function captureUtm() {
+  try {
+    const sp = new URLSearchParams(window.location.search);
+    const utm = Object.fromEntries([...sp].filter(([k]) => k.startsWith('utm_') || k === 'fbclid'));
+    if (Object.keys(utm).length) sessionStorage.setItem('rc-utm', JSON.stringify(utm));
+  } catch { /* нет sessionStorage */ }
 }

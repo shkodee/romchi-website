@@ -26,6 +26,8 @@ export interface MasterRequest {
   layout: string;
   lang: string;
   priceUzs: string;
+  /** UTM из рекламы (utm_source, utm_campaign …) */
+  utm?: Record<string, string>;
 }
 
 const API = process.env.NEXT_PUBLIC_API;
