@@ -2,7 +2,9 @@
 
 Сайт для покупателей приложения **Romchi — sizga yordamchi**.
 
-- План проекта: [docs/plan.md](docs/plan.md)
+- Актуальный план (сайт для граждан): [docs/plan-v2.md](docs/plan-v2.md)
+- Старый план для мастеров (архив): [docs/plan.md](docs/plan.md)
+- Дизайн и продукт: [DESIGN.md](DESIGN.md), [PRODUCT.md](PRODUCT.md)
 - Контекст для Claude Code: [CLAUDE.md](CLAUDE.md)
 
 ## Фронтенд (`web/`)
