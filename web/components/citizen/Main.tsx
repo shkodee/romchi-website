@@ -1,13 +1,13 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import type { Lang } from '@/lib/i18n';
+import { LINKS, type Lang } from '@/lib/i18n';
 import { cdict, type CDict } from '@/lib/citizen/i18n';
 import { BRANDS, MAIN_TYPES, fmt, shapeOf, tpl, type TplId } from '@/lib/citizen/model';
 import { captureUtm, track } from '@/lib/analytics';
 import WindowDrawing from './WindowDrawing';
 import HeroWindow from './HeroWindow';
-import { AppTeaser } from './AppLinks';
+import { AppTeaser, Socials } from './AppLinks';
 import { Balls, LangSwitch, Logo, ThemeToggle, useDark, useMedia } from './ui';
 
 const HERO_H = 140;
@@ -76,7 +76,7 @@ export default function Main({ lang }: { lang: Lang }) {
       <header className="rc-wrap relative z-10 flex items-center justify-between" style={{ paddingTop: 14, paddingBottom: 4 }}>
         <Logo lang={lang} />
         <div className="flex items-center gap-4">
-          <Link href={`/${lang}/ustalar/`} className="hidden md:inline" style={{ color: 'var(--ink)', fontWeight: 600, fontSize: 15 }}>{t.forMastersShort}</Link>
+          <a href={LINKS.romchi} target="_blank" rel="noopener noreferrer" data-track="masters_link" data-from="header" className="hidden md:inline" style={{ color: 'var(--ink)', fontWeight: 600, fontSize: 15 }}>{t.forMastersShort}</a>
           <LangSwitch lang={lang} label={t.lang} />
           <ThemeToggle label={t.theme} />
         </div>
@@ -142,8 +142,9 @@ export default function Main({ lang }: { lang: Lang }) {
       </main>
 
       <footer style={{ background: '#0B1530', color: '#fff', marginTop: 12 }}>
-        <div className="rc-wrap flex flex-col items-center gap-2 md:flex-row md:justify-between" style={{ paddingTop: 22, paddingBottom: 22 }}>
-          <Link href={`/${lang}/ustalar/`} style={{ color: '#fff', fontWeight: 600, fontSize: 15 }}>{t.forMasters} ›</Link>
+        <div className="rc-wrap flex flex-col items-center gap-3 md:flex-row md:justify-between" style={{ paddingTop: 22, paddingBottom: 22 }}>
+          <a href={LINKS.romchi} target="_blank" rel="noopener noreferrer" data-track="masters_link" data-from="footer" style={{ color: '#fff', fontWeight: 600, fontSize: 15 }}>{t.forMasters} ›</a>
+          <Socials t={t} from="footer" onDark />
           <span style={{ color: '#A9B4C8', fontSize: 13 }}>© 2026 Romchi · {t.slogan}</span>
         </div>
       </footer>

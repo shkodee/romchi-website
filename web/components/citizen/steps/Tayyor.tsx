@@ -6,6 +6,7 @@ import { colorSummary, itemCol } from '@/lib/citizen/store';
 import { LINKS } from '@/lib/i18n';
 import WindowDrawing from '../WindowDrawing';
 import { I, LangSwitch, Logo, useDark } from '../ui';
+import { Socials } from '../AppLinks';
 import type { StepProps } from '../Flow';
 
 export default function Tayyor({ t, lang, s, set, go }: StepProps) {
@@ -88,6 +89,10 @@ export default function Tayyor({ t, lang, s, set, go }: StepProps) {
         <div className="grid grid-cols-2 gap-2.5">
           <a href={LINKS.appStore} className="rc-dark-btn" data-track="download_click" data-store="app_store" data-from="tayyor">{I.apple()} App Store</a>
           <a href={LINKS.googlePlay} className="rc-dark-btn" data-track="download_click" data-store="google_play" data-from="tayyor">{I.play()} Google Play</a>
+        </div>
+        <div className="flex flex-col items-center gap-2">
+          <span className="rc-hint" style={{ fontWeight: 600 }}>{t.social}</span>
+          <Socials t={t} from="tayyor" />
         </div>
         <button type="button" className="rc-link" onClick={restart} style={{ alignSelf: 'center', fontSize: 16, minHeight: 44 }}>{t.restart}</button>
       </div>

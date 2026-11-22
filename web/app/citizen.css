@@ -236,3 +236,8 @@
 .rc-grip:active::before { transform: scale(1.3); }
 .rc-grip:focus-visible::before { box-shadow: 0 0 0 4px rgba(255, 201, 77, .9); }
 @media (prefers-reduced-motion: reduce) { .rc-grip::before { animation: none; transition: none; } }
+
+/* иконки соцсетей: отклик на нажатие, рамка синеет при наведении (только мышь) */
+.rc-social { transition: transform .14s var(--e-out), border-color .15s; }
+.rc-social:active { transform: scale(.94); }
+@media (hover: hover) { .rc-social:hover { border-color: var(--blue) !important; } }

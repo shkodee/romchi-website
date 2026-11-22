@@ -478,5 +478,8 @@ export const LINKS = {
   appStore: 'https://apps.apple.com/uz/app/romchi/id6742743588',
   googlePlay: 'https://play.google.com/store/apps/details?id=com.conamobile.romchi2',
   telegram: 'https://t.me/romchi_admin',
+  romchi: 'https://romchi.uz', // официальный сайт приложения Romchi (для мастеров: «Siz ustamisiz?»)
+  instagram: 'https://www.instagram.com/romchi_uzb/',
+  youtube: 'https://www.youtube.com/@RomchiUzbekistan',
   site: 'https://romchi.uz', // [домен]
 };
