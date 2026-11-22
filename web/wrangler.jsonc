@@ -1,0 +1,9 @@
+{
+  // Cloudflare: раздаём статический сайт (npm run build → папка out)
+  "name": "romchi-website",
+  "compatibility_date": "2025-11-01",
+  "assets": {
+    "directory": "./out",
+    "not_found_handling": "404-page"
+  }
+}
