@@ -118,18 +118,6 @@ export default function Main({ lang }: { lang: Lang }) {
             </div>
           </div>
         </div>
-
-        <section className="rc-wrap relative" style={{ height: 230, marginTop: 24 }} aria-label="Romchi">
-          <Balls items={[{ c: 'b', s: 26, style: { right: '12%', top: '4%' }, f: 2 }, { c: 'y', s: 40, style: { left: '42%', top: '42%' } }]} />
-          <div className="rc-fcard" style={{ ['--r' as string]: '-4deg', left: 'max(16px, 8%)', top: 12, padding: '16px 20px' }}>
-            <div className="rc-disp rc-num" style={{ fontSize: 30, color: 'var(--blue)' }}>500 000+</div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink2)', maxWidth: 180 }}>{t.stat1}</div>
-          </div>
-          <div className="rc-fcard" style={{ ['--r' as string]: '5deg', right: 'max(16px, 8%)', top: 110, padding: '16px 20px' }}>
-            <div className="rc-disp rc-num" style={{ fontSize: 30 }}>10 000+</div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink2)' }}>{t.stat2}</div>
-          </div>
-        </section>
       </main>
 
       <footer style={{ background: '#0B1530', color: '#fff', marginTop: 12 }}>

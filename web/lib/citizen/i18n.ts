@@ -21,8 +21,6 @@ const uz = {
   which: 'Qanday deraza kerak?',
   allSamples: 'Barcha namunalar (16)',
   pick: 'tanlash',
-  stat1: 'hisob-kitob Romchi ilovasida qilingan',
-  stat2: 'faol foydalanuvchi',
   trust: 'Bepul · Roʻyxatsiz · Hududingiz ustalari',
   slogan: 'Romchi — sizga yordamchi',
   tpl: {
@@ -181,8 +179,6 @@ const ru: CDict = {
   which: 'Какое окно нужно?',
   allSamples: 'Все образцы (16)',
   pick: 'выбрать',
-  stat1: 'расчётов сделано в приложении Romchi',
-  stat2: 'активных пользователей',
   trust: 'Бесплатно · Без регистрации · Мастера вашего района',
   slogan: 'Romchi — sizga yordamchi',
   tpl: {
