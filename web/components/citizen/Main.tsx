@@ -32,9 +32,13 @@ export default function Main({ lang }: { lang: Lang }) {
           : [{ c: 'b', s: 56, style: { left: '5%', top: '8%' }, f: 2 }, { c: 'y', s: 30, style: { left: '7%', top: '58%' } }, { c: 'b', s: 18, style: { right: '40%', top: '3%' }, f: 3 }, { c: 'y', s: 16, style: { right: '22%', bottom: '4%' }, f: 2 }]} />
         <HeroWindow W={W} H={HERO_H} w={w} h={h} dark={dark} live={big === isDesk}
           fallback={<WindowDrawing shape={{ ...shapeOf(tpl('d2')), W, H: HERO_H }} w={w} h={h} dark={dark} labels swing title={`${t.tpl.d2}, ${W} × ${HERO_H} ${t.cm}`} />} />
+        <div className="rc-fcard rc-pop rc-price rc-shine" style={{ ['--r' as string]: '-6deg', ['--d' as string]: '1.1s', right: '3%', top: big ? '8%' : '1%' }}>
+          <div style={{ fontSize: big ? 13 : 11.5, fontWeight: 700, letterSpacing: '.06em', color: '#5A3D00' }}>{t.areaLbl}</div>
+          <div className="rc-disp rc-num" style={{ fontSize: big ? 30 : 21, lineHeight: 1.15 }} aria-live="polite">{fmtArea(area({ W, H: HERO_H }))} <span style={{ fontSize: big ? 15 : 12 }}>m²</span></div>
+        </div>
         <div className="rc-fcard rc-pop alt flex items-center gap-2" style={{ ['--r' as string]: '5deg', ['--d' as string]: '1.3s', right: '3%', bottom: '10%' }}>
           <span style={{ width: 10, height: 10, borderRadius: 3, background: '#0077FF' }} />
-          <span className="rc-disp rc-num" style={{ fontSize: big ? 20 : 17 }}>{W} × {HERO_H} {t.cm} · {fmtArea(area({ W, H: HERO_H }))} m²</span>
+          <span className="rc-disp rc-num" style={{ fontSize: big ? 20 : 17 }}>{W} × {HERO_H} {t.cm}</span>
         </div>
         <div className="rc-fcard rc-pop flex items-center gap-2" style={{ ['--r' as string]: '-4deg', ['--d' as string]: '1.5s', left: '3%', bottom: '6%', padding: '8px 12px 8px 8px' }}>
           <span style={{ width: 28, height: 28, borderRadius: '50%', backgroundImage: 'url(/colors/c01.webp)', backgroundSize: '120px auto', boxShadow: 'inset 0 0 0 2px #fff,0 0 0 1px #D6DCE6' }} />
