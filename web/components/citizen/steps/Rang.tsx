@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { BRANDS, COLORS, COLOR_NAMES, LEVELS } from '@/lib/citizen/model';
+import { BRANDS, COLORS, COLOR_NAMES } from '@/lib/citizen/model';
 import { track } from '@/lib/analytics';
 import WindowDrawing from '../WindowDrawing';
 import { I, useDark } from '../ui';
@@ -52,20 +52,7 @@ export default function Rang({ t, s, set, go }: StepProps) {
           </div>
         </section>
         <section className="flex flex-col gap-3" aria-labelledby="lvl-h">
-          <h2 id="lvl-h" className="rc-disp" style={{ margin: 0, fontSize: 20 }}>{t.lvlTitle}</h2>
-          <div className="grid grid-cols-3 gap-2">
-            {LEVELS.map((l) => {
-              const on = s.lvl === l;
-              return (
-                <button key={l} type="button" aria-pressed={on} onClick={() => { set((st) => ({ ...st, lvl: l })); track('level_pick', { level: l }); }}
-                  className="flex flex-col items-start gap-1 text-left"
-                  style={{ padding: '12px 12px', borderRadius: 14, cursor: 'pointer', border: on ? '2px solid #0077FF' : '1.5px solid var(--line)', background: on ? 'var(--soft)' : 'var(--card)', boxShadow: on ? '0 0 0 4px rgba(0,119,255,.12)' : 'none', transition: 'transform .14s var(--e-out)' }}>
-                  <b style={{ fontSize: 16 }}>{t.lvl[l][0]}</b>
-                  <span style={{ fontSize: 12.5, color: 'var(--mute)', lineHeight: 1.3 }}>{t.lvl[l][1]}</span>
-                </button>
-              );
-            })}
-          </div>
+          <h2 id="lvl-h" className="rc-disp" style={{ margin: 0, fontSize: 20 }}>{t.rowProfile}</h2>
           <button type="button" className="rc-link flex items-center justify-between" aria-expanded={open} onClick={() => setOpen(!open)} style={{ fontSize: 16, fontWeight: 700, minHeight: 44 }}>
             {s.brand ? `${t.brand}: ${s.brand}` : t.brandMine}
             <span style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .2s var(--e-out)', display: 'flex' }}>{I.chev()}</span>

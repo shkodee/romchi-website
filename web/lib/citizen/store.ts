@@ -1,6 +1,6 @@
 // Состояние пути гражданина: заказ, цвет, уровень, район, мастера, телефон.
 // Хранится в localStorage (возврат на сайт — всё на месте) и кодируется в ссылку «Ulashish».
-import { COLORS, COLOR_NAMES, LEVELS, isColor, isTpl, newItem, clamp, LIMITS, type Item, type Lvl, type Open, type Uzor, OPENS, SLIDES, UZORS } from './model';
+import { COLORS, COLOR_NAMES, isColor, isTpl, newItem, clamp, LIMITS, type Item, type Lvl, type Open, type Uzor, OPENS, SLIDES, UZORS } from './model';
 
 export type Step = 'turi' | 'olcham' | 'buyurtma' | 'rang' | 'narx' | 'hudud' | 'ustalar' | 'tayyor';
 export const STEPS: Step[] = ['turi', 'olcham', 'buyurtma', 'rang', 'narx', 'hudud', 'ustalar', 'tayyor'];
@@ -67,7 +67,7 @@ export function load(): S {
       draft: cleanItem(p.draft),
       editId: typeof p.editId === 'string' ? p.editId : null,
       col: isColor(p.col) ? p.col : null,
-      lvl: LEVELS.includes(p.lvl as Lvl) ? (p.lvl as Lvl) : 'standart',
+      lvl: 'standart', // пока только Standart; Ekonom/Premium вернутся, когда разделим профили
       brand: typeof p.brand === 'string' ? p.brand : null,
       region: typeof p.region === 'number' ? p.region : null,
       district: typeof p.district === 'number' ? p.district : null,
@@ -102,7 +102,7 @@ export function decodeShare(m: string): Partial<S> | null {
     return {
       items,
       col: isColor(p.col) ? p.col : initial.col,
-      lvl: LEVELS.includes(p.lvl as Lvl) ? (p.lvl as Lvl) : 'standart',
+      lvl: 'standart', // пока только Standart; Ekonom/Premium вернутся, когда разделим профили
       brand: typeof p.brand === 'string' ? p.brand : null,
     };
   } catch { return null; }
