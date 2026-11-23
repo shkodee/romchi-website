@@ -8,7 +8,7 @@ import type { StepProps } from '../Flow';
 
 const CATS: (Cat | 'all')[] = ['all', 'deraza', 'eshik', 'balkon', 'boshqa'];
 
-export default function Namunalar({ t, set, go }: StepProps) {
+export default function Namunalar({ t, s, set, go }: StepProps) {
   const [cat, setCat] = useState<Cat | 'all'>('all');
   const dark = useDark();
   const list = TEMPLATES.filter((x) => cat === 'all' || x.cat === cat);
@@ -32,7 +32,7 @@ export default function Namunalar({ t, set, go }: StepProps) {
         {list.map((x) => (
           <button key={x.id} type="button" className="rc-tile" onClick={() => pick(x.id)} style={{ minHeight: 168, padding: '14px 8px 12px' }} aria-label={`${t.tpl[x.id]}, ${x.W}×${x.H} ${t.cm}`}>
             <div className="flex flex-1 items-center justify-center" style={{ height: 110 }}>
-              <WindowDrawing shape={shapeOf(x)} maxW={96} maxH={96} dark={dark} />
+              <WindowDrawing shape={shapeOf(x)} maxW={96} maxH={96} color={s.col} dark={dark} />
             </div>
             <span style={{ fontWeight: 700, fontSize: 14, lineHeight: 1.2 }}>{t.tpl[x.id]}</span>
             <span className="rc-num" style={{ fontSize: 12.5, color: 'var(--mute)', fontWeight: 600 }}>{x.W}×{x.H} {t.cm}</span>
