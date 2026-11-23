@@ -1,6 +1,6 @@
 // Состояние пути гражданина: заказ, цвет, уровень, район, мастера, телефон.
 // Хранится в localStorage (возврат на сайт — всё на месте) и кодируется в ссылку «Ulashish».
-import { COLORS, COLOR_NAMES, LEVELS, isColor, isTpl, newItem, clamp, LIMITS, type Item, type Lvl, type Open, type Uzor, OPENS, UZORS } from './model';
+import { COLORS, COLOR_NAMES, LEVELS, isColor, isTpl, newItem, clamp, LIMITS, type Item, type Lvl, type Open, type Uzor, OPENS, SLIDES, UZORS } from './model';
 
 export type Step = 'turi' | 'olcham' | 'buyurtma' | 'rang' | 'narx' | 'hudud' | 'ustalar' | 'tayyor';
 export const STEPS: Step[] = ['turi', 'olcham', 'buyurtma', 'rang', 'narx', 'hudud', 'ustalar', 'tayyor'];
@@ -28,7 +28,8 @@ export const initial: S = { items: [], draft: null, editId: null, col: null, lvl
 
 const KEY = 'romchi-maket-v1';
 
-const OPEN_SET = new Set<string>([...OPENS, 'slideL', 'slideR']);
+const OPEN_SET = new Set<string>([...OPENS, ...SLIDES]);
+const isUzor = (x: unknown): x is Uzor => UZORS.includes(x as Uzor);
 function cleanItem(x: unknown): Item | null {
   if (!x || typeof x !== 'object') return null;
   const o = x as Partial<Item>;
@@ -37,7 +38,8 @@ function cleanItem(x: unknown): Item | null {
   const cols = o.cols.map((c) => ({
     f: Number(c?.f) > 0 ? Number(c.f) : 1 / o.cols!.length,
     open: (OPEN_SET.has(String(c?.open)) ? c.open : 'fix') as Open,
-    ...(Number(c?.panel) > 0 && Number(c.panel) < 1 ? { panel: Number(c.panel) } : {}),
+    ...(Number(c?.panel) > 0 && Number(c.panel) < 1 ? { panel: Number(c.panel), ...(c.lower === 'glass' ? { lower: 'glass' as const } : {}) } : {}),
+    ...(isUzor(c?.uzor) ? { uzor: c.uzor } : {}),
   }));
   const sum = cols.reduce((a, c) => a + c.f, 0);
   cols.forEach((c) => (c.f /= sum));
@@ -50,6 +52,7 @@ function cleanItem(x: unknown): Item | null {
     uzor: (UZORS.includes(o.uzor as Uzor) ? o.uzor : (o.uzor as string) === 'crossFlower' ? 'cross' : 'none') as Uzor,
     qty: clamp(Math.round(Number(o.qty) || 1), 1, 99),
     ...(isColor(o.col) ? { col: o.col } : {}),
+    ...(Number(o.archH) > 0 ? { archH: clamp(Math.round(Number(o.archH)), 10, LIMITS.H[1]) } : {}),
   };
 }
 
@@ -84,7 +87,10 @@ const b64 = (s: string) => btoa(unescape(encodeURIComponent(s))).replace(/\+/g, 
 const unb64 = (s: string) => decodeURIComponent(escape(atob(s.replace(/-/g, '+').replace(/_/g, '/'))));
 
 export function encodeShare(s: S): string {
-  const items = s.items.map(({ tpl, W, H, cols, uzor, qty, col }) => ({ tpl, W, H, cols: cols.map((c) => ({ f: +c.f.toFixed(4), open: c.open, ...(c.panel ? { panel: c.panel } : {}) })), uzor, qty, ...(col ? { col } : {}) }));
+  const items = s.items.map(({ tpl, W, H, cols, uzor, qty, col, archH }) => ({
+    tpl, W, H, uzor, qty, ...(col ? { col } : {}), ...(archH ? { archH } : {}),
+    cols: cols.map((c) => ({ f: +c.f.toFixed(4), open: c.open, ...(c.panel ? { panel: +c.panel.toFixed(4), ...(c.lower ? { lower: c.lower } : {}) } : {}), ...(c.uzor ? { uzor: c.uzor } : {}) })),
+  }));
   return b64(JSON.stringify({ items, col: s.col, lvl: s.lvl, brand: s.brand }));
 }
 

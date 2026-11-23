@@ -6,7 +6,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { ContactShadows, Environment, Lightformer, OrbitControls, useCursor, useTexture } from '@react-three/drei';
 import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { COLORS, clamp, colWidths, tpl, type Item, type Open } from '@/lib/citizen/model';
+import { COLORS, archRise, clamp, colUzor, colWidths, tpl, type Item, type Lower, type Open } from '@/lib/citizen/model';
 import { canTilt, canTurn, type Mode } from '@/lib/citizen/modes';
 export { hasTilt, hasTurn, modesFor, nextMode, type Cmd, type Mode } from '@/lib/citizen/modes';
 
@@ -14,14 +14,14 @@ export { hasTilt, hasTurn, modesFor, nextMode, type Cmd, type Mode } from '@/lib
 // ---------- геометрия ----------
 interface Layout {
   W: number; H: number; t: number; archR: number; cy: number; arch: boolean; sill: boolean;
-  secs: { x: number; w: number; y0: number; y1: number; open: Open; panel: number }[];
+  secs: { x: number; w: number; y0: number; y1: number; open: Open; panel: number; lower: Lower }[];
 }
 
 function layout(it: Item): Layout {
   const T = tpl(it.tpl);
   const W = it.W / 100, H = it.H / 100;
   const t = clamp(Math.min(W, H) * 0.052, 0.05, 0.075);
-  const archR = T.arch ? Math.min(W / 2, H * 0.6) : 0;
+  const archR = T.arch ? archRise(it) / 100 : 0;
   const cy = H / 2 - archR;
   const top = archR ? cy - t : H / 2 - t;
   const bot = -H / 2 + t;
@@ -30,7 +30,7 @@ function layout(it: Item): Layout {
   let x = -W / 2 + t;
   const secs = it.cols.map((c, i) => {
     const w = (avail * ws[i]) / it.W;
-    const s = { x, w, y0: bot, y1: top, open: c.open, panel: c.panel ? (top - bot) * c.panel : 0 };
+    const s = { x, w, y0: bot, y1: top, open: c.open, panel: c.panel ? (top - bot) * c.panel : 0, lower: c.lower ?? 'panel' };
     x += w + t;
     return s;
   });
@@ -124,7 +124,15 @@ function Frame({ L, col, dark }: { L: Layout; col: string | null; dark: boolean 
   const geo = useGeo(() => {
     const s = outerShape(L);
     if (L.arch) { const h = new THREE.Path(); archPath(h, L); s.holes.push(h); }
-    for (const c of L.secs) { const h = new THREE.Path(); rectPath(h, c.x, c.open === 'fix' ? c.y0 + c.panel : c.y0, c.x + c.w, c.y1); s.holes.push(h); }
+    for (const c of L.secs) {
+      if (c.open === 'fix' && c.panel > 0 && c.lower === 'glass') {
+        // глухая секция со стеклом снизу: два проёма, между ними импост
+        const lo = new THREE.Path(); rectPath(lo, c.x, c.y0, c.x + c.w, c.y0 + c.panel - L.t / 2); s.holes.push(lo);
+        const hi = new THREE.Path(); rectPath(hi, c.x, c.y0 + c.panel + L.t / 2, c.x + c.w, c.y1); s.holes.push(hi);
+        continue;
+      }
+      const h = new THREE.Path(); rectPath(h, c.x, c.open === 'fix' ? c.y0 + c.panel : c.y0, c.x + c.w, c.y1); s.holes.push(h);
+    }
     return extrude(s, D);
   }, [L]);
   return <mesh geometry={geo} castShadow receiveShadow><Profile col={col} dark={dark} /></mesh>;
@@ -132,7 +140,7 @@ function Frame({ L, col, dark }: { L: Layout; col: string | null; dark: boolean 
 
 /** глухая секция: стекло в раме + уплотнитель + панель */
 function FixedSec({ L, c, uzor, col, dark }: { L: Layout; c: Layout['secs'][number]; uzor: Item['uzor']; col: string | null; dark: boolean }) {
-  const gy0 = c.y0 + c.panel, gh = c.y1 - gy0, cx = c.x + c.w / 2, cyy = gy0 + gh / 2;
+  const gy0 = c.y0 + c.panel + (c.panel > 0 && c.lower === 'glass' ? L.t / 2 : 0), gh = c.y1 - gy0, cx = c.x + c.w / 2, cyy = gy0 + gh / 2;
   const ring = useGeo(() => ringGeo(c.w, gh, 0.014, 0.016), [c.w, gh]);
   return (
     <group>
@@ -140,8 +148,8 @@ function FixedSec({ L, c, uzor, col, dark }: { L: Layout; c: Layout['secs'][numb
       <mesh geometry={ring} position={[cx, cyy, 0.012]}><Rubber /></mesh>
       <Bars w={c.w - 0.03} h={gh - 0.03} uzor={uzor} x={cx} y={cyy} />
       {c.panel > 0 && (
-        <mesh position={[cx, c.y0 + c.panel / 2, 0.035 + 0.005]} castShadow receiveShadow>
-          <boxGeometry args={[c.w - L.t * 1.3, c.panel - L.t * 0.9, 0.012]} /><Profile col={col} dark={dark} />
+        <mesh position={[cx, c.lower === 'glass' ? c.y0 + (c.panel - L.t / 2) / 2 : c.y0 + c.panel / 2, c.lower === 'glass' ? 0 : 0.035 + 0.005]} castShadow={c.lower !== 'glass'} receiveShadow>
+          <boxGeometry args={c.lower === 'glass' ? [c.w + 0.02, c.panel - L.t / 2 + 0.02, 0.012] : [c.w - L.t * 1.3, c.panel - L.t * 0.9, 0.012]} />{c.lower === 'glass' ? <GlassMat /> : <Profile col={col} dark={dark} />}
         </mesh>
       )}
     </group>
@@ -249,8 +257,8 @@ function Sash({ L, c, mode, uzor, col, dark, reduce, onTap }: {
           <mesh geometry={ring} position={[0, hcy, 0.01]}><Rubber /></mesh>
           <Bars w={hw - 0.03} h={hh - 0.03} uzor={uzor} y={hcy} />
           {c.panel > 0 && (
-            <mesh position={[0, -sh / 2 + ts * 0.5 + (c.panel - ts * 0.9) / 2, Ds / 2 + 0.004]} castShadow receiveShadow>
-              <boxGeometry args={[sw - ts * 1.8, c.panel - ts * 0.9, 0.012]} /><Profile col={col} dark={dark} />
+            <mesh position={[0, -sh / 2 + ts * 0.5 + (c.panel - ts * 0.9) / 2, c.lower === 'glass' ? 0 : Ds / 2 + 0.004]} castShadow={c.lower !== 'glass'} receiveShadow>
+              <boxGeometry args={[sw - ts * 1.8, c.panel - ts * 0.9, 0.012]} />{c.lower === 'glass' ? <GlassMat /> : <Profile col={col} dark={dark} />}
             </mesh>
           )}
           {/* ручка */}
@@ -374,8 +382,8 @@ export default function WindowScene({ item, col, dark, modes, onTap, rotate, onU
         )}
         {L.secs.map((c, i) =>
           c.open === 'fix'
-            ? <FixedSec key={i} L={L} c={c} uzor={item.uzor} col={col} dark={dark} />
-            : <Sash key={i} L={L} c={c} mode={modes[i] ?? 'closed'} uzor={item.uzor} col={col} dark={dark} reduce={reduce} onTap={() => onTap(i)} />,
+            ? <FixedSec key={i} L={L} c={c} uzor={colUzor(item, i)} col={col} dark={dark} />
+            : <Sash key={i} L={L} c={c} mode={modes[i] ?? 'closed'} uzor={colUzor(item, i)} col={col} dark={dark} reduce={reduce} onTap={() => onTap(i)} />,
         )}
         {L.sill && (
           <mesh position={[0, -L.H / 2 - 0.0175, 0.075]} castShadow receiveShadow>

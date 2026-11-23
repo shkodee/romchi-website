@@ -1,8 +1,8 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import {
-  LIMITS, OPENS, QUICK, UZORS, area, colWidths, equalize, fmt, fmtArea, isOpenable, newItem, priceOf,
-  setColW, setCount, setH, setW, type Item, type Open, type Uzor,
+  LIMITS, LOWER_MIN, OPENS, QUICK, SLIDES, UZORS, archMax, archRise, area, colUzor, colWidths, equalize, fmt, fmtArea, isOpenable, newItem, priceOf,
+  setColW, setCount, setH, setLower, setW, tpl, type Item, type Lower, type Open, type Uzor,
 } from '@/lib/citizen/model';
 import { itemCol } from '@/lib/citizen/store';
 import { track } from '@/lib/analytics';
@@ -22,6 +22,10 @@ export function OpenIcon({ o, s = 30 }: { o: Open; s?: number }) {
   const d: Record<string, string> = {
     turnL: `M${p} ${p} L${a} ${m} L${p} ${a}`, turnR: `M${a} ${p} L${p} ${m} L${a} ${a}`, tilt: `M${p} ${a} L${m} ${p} L${a} ${a}`,
     ttL: `M${p} ${p} L${a} ${m} L${p} ${a} M${p} ${a} L${m} ${p} L${a} ${a}`, ttR: `M${a} ${p} L${p} ${m} L${a} ${a} M${p} ${a} L${m} ${p} L${a} ${a}`, fix: '',
+    // surma: стрелки
+    slideL: `M${a - 2} ${m} H${p + 2} M${p + 7} ${m - 5} L${p + 2} ${m} L${p + 7} ${m + 5}`,
+    slideR: `M${p + 2} ${m} H${a - 2} M${a - 7} ${m - 5} L${a - 2} ${m} L${a - 7} ${m + 5}`,
+    slideLR: `M${p + 2} ${m} H${a - 2} M${p + 7} ${m - 5} L${p + 2} ${m} L${p + 7} ${m + 5} M${a - 7} ${m - 5} L${a - 2} ${m} L${a - 7} ${m + 5}`,
   };
   return (
     <svg width={s} height={s} viewBox={`0 0 ${s} ${s}`} aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
@@ -35,6 +39,16 @@ function SplitIcon({ n, s = 30 }: { n: number; s?: number }) {
     <svg width={s} height={s} viewBox={`0 0 ${s} ${s}`} aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2">
       <rect x="2" y="2" width={s - 4} height={s - 4} rx="3" />
       {Array.from({ length: n - 1 }, (_, k) => { const x = 2 + ((s - 4) * (k + 1)) / n; return <path key={k} d={`M${x} 2 V${s - 2}`} />; })}
+    </svg>
+  );
+}
+function LowerIcon({ k, s = 20 }: { k: 'none' | Lower; s?: number }) {
+  const y = s * 0.62;
+  return (
+    <svg width={s} height={s} viewBox={`0 0 ${s} ${s}`} aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" style={{ marginRight: 6, flex: 'none' }}>
+      <rect x="2" y="1.5" width={s - 4} height={s - 3} rx="2" />
+      {k !== 'none' && <path d={`M2 ${y} H${s - 2}`} />}
+      {k === 'panel' && <rect x="4" y={y + 2} width={s - 8} height={s - y - 5.5} fill="currentColor" opacity=".35" stroke="none" />}
     </svg>
   );
 }
@@ -103,6 +117,15 @@ export default function Konstruktor({ t, s, set, go, notify }: StepProps) {
     set((st) => ({ ...st, draft: prev }));
   };
   const selI = Math.min(sel, draft.cols.length - 1);
+  const isSl = draft.tpl === 'sl';
+  const isArch = !!tpl(draft.tpl).arch;
+  const selCol = draft.cols[selI];
+  const selLower: Lower | 'none' = selCol?.panel ? selCol.lower ?? 'panel' : 'none';
+  const paneLbl = (hint: string) => (draft.cols.length > 1 ? `${hint} · ${t.pane} ${selI + 1}` : hint);
+  /** узор: старый общий узор изделия раскладывается по стёклам, дальше — у каждого стекла свой */
+  const setUzor = (u: Uzor, all = false) => upd((d) => ({
+    ...d, uzor: 'none', cols: d.cols.map((c, k) => (all || k === selI ? { ...c, uzor: u } : { ...c, uzor: colUzor(d, k) })),
+  }));
 
   // размер чертежа
   const isDesk = useMedia('(min-width: 1024px)');
@@ -176,9 +199,9 @@ export default function Konstruktor({ t, s, set, go, notify }: StepProps) {
           ))}
         </div>
       )}
-      <WindowDrawing shape={draft} w={w} h={h} color={itemCol(draft, s)} dark={dark} labels onGlass={(i) => { setSel(i); setTab('ochilish'); }} title={`${t.tpl[draft.tpl]}, ${draft.W} × ${draft.H} ${t.cm}`} />
+      <WindowDrawing shape={draft} w={w} h={h} color={itemCol(draft, s)} dark={dark} labels onGlass={(i) => setSel(i)} title={`${t.tpl[draft.tpl]}, ${draft.W} × ${draft.H} ${t.cm}`} />
       {/* выбранное стекло */}
-      {tab === 'ochilish' && g.secs[selI] && (
+      {draft.cols.length > 1 && g.secs[selI] && (
         <div aria-hidden="true" className="pointer-events-none absolute" style={{ left: g.secs[selI].x - 2, top: g.secs[selI].y - 2, width: g.secs[selI].w + 4, height: g.secs[selI].h + 4, border: '3px solid #FFC529', borderRadius: 4, boxShadow: '0 0 0 3px rgba(255,197,41,.3)' }} />
       )}
       {/* справа: высота */}
@@ -231,11 +254,33 @@ export default function Konstruktor({ t, s, set, go, notify }: StepProps) {
             <button key={n} type="button" className="rc-opt" aria-pressed={draft.cols.length === n} aria-label={`${n}`} onClick={() => { upd((d) => setCount(d, n)); setSel(0); }}><SplitIcon n={n} /></button>
           ))}
         </div>
+        {/* горизонтальный импост: снизу панель (алюкобонд) или стекло */}
+        <span className="rc-lbl" style={{ marginTop: 6 }}>{paneLbl(t.lowerLbl)}</span>
+        <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label={t.lowerLbl}>
+          {(['none', 'panel', 'glass'] as const).map((k) => (
+            <button key={k} type="button" role="radio" className="rc-chip" style={{ justifyContent: 'center' }} aria-checked={selLower === k} aria-pressed={selLower === k}
+              onClick={() => upd((d) => setLower(d, selI, k === 'none' ? null : k))}>
+              <LowerIcon k={k} />{t.lowers[k]}
+            </button>
+          ))}
+        </div>
+        {selLower !== 'none' && selCol?.panel && (
+          <div className="flex gap-3">
+            <NumField label={t.lowerH} unit={t.cm} value={Math.round(selCol.panel * draft.H)} min={LOWER_MIN} max={Math.max(LOWER_MIN, draft.H - 30)}
+              onCommit={(n) => upd((d) => setLower(d, selI, selLower, n))} />
+          </div>
+        )}
+        {isArch && (
+          <div className="flex gap-3" style={{ marginTop: 6 }}>
+            <NumField label={t.archH} unit={t.cm} value={archRise(draft)} min={10} max={archMax(draft)}
+              onCommit={(n) => upd((d) => ({ ...d, archH: Math.min(n, archMax(d)) }))} />
+          </div>
+        )}
       </>)}
       {tab === 'ochilish' && (<>
         <span className="rc-lbl">{draft.cols.length > 1 ? `${t.ochilishHint} · ${t.pane} ${selI + 1}` : t.ochilishHint}</span>
-        <div className="grid grid-cols-6 gap-2">
-          {OPENS.map((o) => (
+        <div className={`grid gap-2 ${isSl ? 'grid-cols-4' : 'grid-cols-6'}`}>
+          {(isSl ? SLIDES : OPENS).map((o) => (
             <button key={o} type="button" className="rc-opt" aria-pressed={draft.cols[selI]?.open === o} aria-label={t.open[o]} title={t.open[o]}
               onClick={() => upd((d) => ({ ...d, cols: d.cols.map((c, k) => (k === selI ? { ...c, open: o } : c)) }))}><OpenIcon o={o} /></button>
           ))}
@@ -243,11 +288,17 @@ export default function Konstruktor({ t, s, set, go, notify }: StepProps) {
         <span className="rc-hint">{t.open[draft.cols[selI]?.open ?? 'fix']}</span>
       </>)}
       {tab === 'uzor' && (<>
-        <span className="rc-lbl">{t.uzorHint}</span>
-        <div className="grid grid-cols-4 gap-2">
+        <span className="rc-lbl">{paneLbl(t.uzorHint)}</span>
+        <div className="grid grid-cols-5 gap-2">
           {UZORS.map((u) => (
-            <button key={u} type="button" className="rc-opt" aria-pressed={draft.uzor === u} aria-label={t.uzors[u]} title={t.uzors[u]} onClick={() => upd((d) => ({ ...d, uzor: u }))}><UzorIcon u={u} /></button>
+            <button key={u} type="button" className="rc-opt" aria-pressed={colUzor(draft, selI) === u} aria-label={t.uzors[u]} title={t.uzors[u]} onClick={() => setUzor(u)}><UzorIcon u={u} /></button>
           ))}
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="rc-hint">{t.uzors[colUzor(draft, selI)]} · {t.uzorNote}</span>
+          {draft.cols.length > 1 && (
+            <button type="button" className="rc-chip" onClick={() => setUzor(colUzor(draft, selI), true)}>{t.allPanes}</button>
+          )}
         </div>
       </>)}
     </div>

@@ -3,7 +3,7 @@
 // Один SVG с viewBox в пикселях: рама залита текстурой цвета (pattern) или цветом,
 // стекло #80D4EC, линии открывания #1F4FD8, ручка, петли, подписи C/F поверх (HTML).
 import { useId, type CSSProperties } from 'react';
-import { colWidths, tpl, type Col, type Open, type TplId, type Uzor } from '@/lib/citizen/model';
+import { archRise, colUzor, colWidths, isSlide, tpl, type Col, type Open, type TplId, type Uzor } from '@/lib/citizen/model';
 
 export const GLASS = '#80D4EC';
 export const OPEN_LINE = '#1F4FD8';
@@ -11,7 +11,7 @@ export const OPEN_LINE = '#1F4FD8';
 export const GOLD = '#D9A93A';
 export const GOLD_DK = '#9A6F12';
 
-export interface Shape { tpl: TplId; W: number; H: number; cols: Col[]; uzor?: Uzor }
+export interface Shape { tpl: TplId; W: number; H: number; cols: Col[]; uzor?: Uzor; archH?: number }
 
 /** Размер чертежа (px), вписанный в коробку maxW×maxH */
 export function fit(s: Pick<Shape, 'W' | 'H'>, maxW: number, maxH: number) {
@@ -29,7 +29,7 @@ export interface Geo {
 export function geometry(s: Shape, w: number, h: number): Geo {
   const T = tpl(s.tpl);
   const t = Math.max(4, Math.min(13, Math.min(w, h) * 0.062));
-  const archR = T.arch ? Math.min(w / 2, h * 0.6) : 0;
+  const archR = T.arch ? Math.min(h * 0.85, (archRise(s) * h) / s.H) : 0;
   const ws = colWidths({ W: s.W, cols: s.cols });
   const inner = w - 2 * t;
   const gaps = (s.cols.length - 1) * t;
@@ -99,8 +99,7 @@ export default function WindowDrawing({ shape, color = null, dark = false, w, h,
   let cN = 0, fN = 0;
   const marks: { x: number; y: number; s: string }[] = [];
 
-  const uzor = (gl: number, gt: number, gr: number, gb: number, key: string) => {
-    const u = shape.uzor;
+  const uzor = (gl: number, gt: number, gr: number, gb: number, key: string, u: Uzor) => {
     if (!u || u === 'none') return null;
     const bw = Math.max(1.4, t * 0.24);
     const out = [];
@@ -134,47 +133,64 @@ export default function WindowDrawing({ shape, color = null, dark = false, w, h,
     );
   };
 
+  /** глухая панель (алюкобонд) под импостом */
+  const panelRect = (x0: number, y0: number, x1: number, y1: number, key: string) => (
+    <g key={key}>
+      <rect x={x0} y={y0} width={x1 - x0} height={y1 - y0} fill={white ? '#E3E7EE' : 'rgba(0,0,0,.16)'} stroke={line} strokeWidth={sw} />
+      <path d={`M${x0 + 2} ${y0 + 2} H${x1 - 2}`} stroke="rgba(255,255,255,.35)" strokeWidth={1} />
+    </g>
+  );
+
+  /** стрелки surma: ← → или ↔, ниже подписи C1 */
+  const slideArrow = (o: Open, gl: number, gt: number, gr: number, gb: number) => {
+    const ay = gt + (gb - gt) * 0.7, half = Math.max(8, Math.min(34, (gr - gl) * 0.3)), cx = (gl + gr) / 2;
+    const hd = Math.max(4, Math.min(8, half * 0.4)), x0 = cx - half, x1 = cx + half;
+    const head = (x: number, dir: number) => `M${x - dir * hd} ${ay - hd * 0.8} L${x} ${ay} L${x - dir * hd} ${ay + hd * 0.8}`;
+    const d = `M${x0} ${ay} H${x1} ${o !== 'slideL' ? head(x1, 1) : ''} ${o !== 'slideR' ? head(x0, -1) : ''}`;
+    return <path key="a" d={d} fill="none" stroke={OPEN_LINE} strokeWidth={Math.max(1.6, t * 0.16)} strokeLinecap="round" strokeLinejoin="round" />;
+  };
+
   const sections = secs.map((s, i) => {
     const c = shape.cols[i];
     const o = c.open;
-    const bottom = s.panelY ?? s.y + s.h;
+    const bottom = s.y + s.h;
     const els = [];
     const label = o === 'fix' ? `F${++fN}` : `C${++cN}`;
-    const sash = o !== 'fix' && !o.startsWith('slide');
-    const slide = o.startsWith('slide');
-    // область секции (стекло + створка)
+    const slide = isSlide(o);
+    const sash = o !== 'fix' && !slide;
+    const u = colUzor(shape, i);
     const hingeLeft = o === 'turnL' || o === 'ttL';
-    let gl: number, gt: number, gr: number, gb: number;
     const pane = [];
-    if (sash || slide) {
-      const ins = t * 0.82;
-      pane.push(<rect key="so" x={s.x + 1} y={s.y + 1} width={s.w - 2} height={bottom - s.y - 2} fill="none" stroke={line} strokeWidth={sw} />);
-      gl = s.x + ins; gt = s.y + ins; gr = s.x + s.w - ins; gb = bottom - ins;
-      pane.push(glass(gl, gt, gr, gb, `s${i}`));
-      if (sash) {
-        pane.push(<path key="o" d={openPath(o, gl, gt, gr, gb)} fill="none" stroke={OPEN_LINE} strokeWidth={Math.max(1, t * 0.11)} />);
-        const hw = Math.max(2, t * 0.42), hh = Math.max(6, (gb - gt) * 0.13);
-        if (o === 'tilt') {
-          pane.push(<rect key="h" x={(gl + gr) / 2 - hh / 2} y={s.y + (gt - s.y - hw) / 2} width={hh} height={hw} rx={1} fill="#15181D" stroke="#8B93A0" strokeWidth={0.6} />);
-        } else {
-          const hx = hingeLeft ? gr + (s.x + s.w - gr - hw) / 2 : s.x + (gl - s.x - hw) / 2;
-          pane.push(<rect key="h" x={hx} y={(gt + gb) / 2 - hh / 2} width={hw} height={hh} rx={1} fill="#15181D" stroke="#8B93A0" strokeWidth={0.6} />);
-          const px = hingeLeft ? s.x + 0.8 : s.x + s.w - 0.8 - Math.max(1.6, t * 0.4);
-          const ph = Math.max(3, t * 0.85);
-          pane.push(<rect key="p1" x={px} y={gt + (gb - gt) * 0.12} width={Math.max(1.6, t * 0.4)} height={ph} fill="#15181D" />);
-          pane.push(<rect key="p2" x={px} y={gb - (gb - gt) * 0.12 - ph} width={Math.max(1.6, t * 0.4)} height={ph} fill="#15181D" />);
-        }
-      } else {
-        const ay = (gt + gb) / 2, aw = Math.min(18, (gr - gl) * 0.22), dir = o === 'slideR' ? 1 : -1, cx = (gl + gr) / 2;
-        pane.push(<path key="a" d={`M${cx - (dir * aw) / 2} ${ay} H${cx + (dir * aw) / 2} M${cx + (dir * aw) / 2 - dir * 4} ${ay - 3.5} L${cx + (dir * aw) / 2} ${ay} L${cx + (dir * aw) / 2 - dir * 4} ${ay + 3.5}`} fill="none" stroke={OPEN_LINE} strokeWidth={1.3} />);
-      }
-    } else {
-      const ins = Math.max(1.4, t * 0.3);
-      gl = s.x + ins; gt = s.y + ins; gr = s.x + s.w - ins; gb = bottom - ins;
-      pane.push(glass(gl, gt, gr, gb, `f${i}`));
+    // область стекла: целиком (gl..gb) и верх над импостом (gbTop)
+    const ins = sash || slide ? t * 0.82 : Math.max(1.4, t * 0.3);
+    const gl = s.x + ins, gt = s.y + ins, gr = s.x + s.w - ins, gb = bottom - ins;
+    const low = s.panelY !== undefined;
+    const imp = Math.max(2, t * 0.7) / 2; // половина импоста
+    const gbTop = low ? s.panelY! - imp : gb;
+    if (sash || slide) pane.push(<rect key="so" x={s.x + 1} y={s.y + 1} width={s.w - 2} height={bottom - s.y - 2} fill="none" stroke={line} strokeWidth={sw} />);
+    pane.push(glass(gl, gt, gr, gbTop, `g${i}`));
+    pane.push(...(uzor(gl, gt, gr, gbTop, `u${i}`, u) ?? []));
+    if (low) {
+      const ly = s.panelY! + imp;
+      if (c.lower === 'glass') pane.push(glass(gl, ly, gr, gb, `l${i}`));
+      else pane.push(panelRect(gl, ly, gr, gb, `pn${i}`));
     }
-    pane.push(...(uzor(gl, gt, gr, gb, `u${i}`) ?? []));
-    marks.push({ x: (gl + gr) / 2, y: (gt + gb) / 2, s: label });
+    if (sash) {
+      pane.push(<path key="o" d={openPath(o, gl, gt, gr, gb)} fill="none" stroke={OPEN_LINE} strokeWidth={Math.max(1, t * 0.11)} />);
+      const hw = Math.max(2, t * 0.42), hh = Math.max(6, (gb - gt) * 0.13);
+      if (o === 'tilt') {
+        pane.push(<rect key="h" x={(gl + gr) / 2 - hh / 2} y={s.y + (gt - s.y - hw) / 2} width={hh} height={hw} rx={1} fill="#15181D" stroke="#8B93A0" strokeWidth={0.6} />);
+      } else {
+        const hx = hingeLeft ? gr + (s.x + s.w - gr - hw) / 2 : s.x + (gl - s.x - hw) / 2;
+        pane.push(<rect key="h" x={hx} y={(gt + gb) / 2 - hh / 2} width={hw} height={hh} rx={1} fill="#15181D" stroke="#8B93A0" strokeWidth={0.6} />);
+        const px = hingeLeft ? s.x + 0.8 : s.x + s.w - 0.8 - Math.max(1.6, t * 0.4);
+        const ph = Math.max(3, t * 0.85);
+        pane.push(<rect key="p1" x={px} y={gt + (gb - gt) * 0.12} width={Math.max(1.6, t * 0.4)} height={ph} fill="#15181D" />);
+        pane.push(<rect key="p2" x={px} y={gb - (gb - gt) * 0.12 - ph} width={Math.max(1.6, t * 0.4)} height={ph} fill="#15181D" />);
+      }
+    }
+    if (slide) pane.push(slideArrow(o, gl, gt, gr, gbTop));
+    marks.push({ x: (gl + gr) / 2, y: slide ? gt + (gbTop - gt) * 0.38 : (gt + gbTop) / 2, s: label });
 
     els.push(<rect key="bg" x={s.x} y={s.y} width={s.w} height={s.h} fill="none" stroke={shine} strokeWidth={1} />);
     if (swing && sash) {
@@ -186,10 +202,6 @@ export default function WindowDrawing({ shape, color = null, dark = false, w, h,
         </g>,
       );
     } else els.push(<g key="p">{pane}</g>);
-    if (s.panelY !== undefined) {
-      const pi = t * 0.7;
-      els.push(<rect key="pn" x={s.x + pi} y={s.panelY + pi} width={s.w - 2 * pi} height={s.y + s.h - s.panelY - 2 * pi} fill="rgba(0,0,0,.14)" stroke={line} strokeWidth={sw} />);
-    }
     if (onGlass) {
       els.push(<rect key="hit" x={s.x} y={s.y} width={s.w} height={bottom - s.y} fill="transparent" style={{ cursor: 'pointer' }} onClick={() => onGlass(i)} />);
     }

@@ -2,21 +2,30 @@
 // ЦЕНЫ ДЕМО: ставка 2 140 000 soʻm/m² (из макета). Когда команда даст реальные цены —
 // заменить priceOf(), интерфейс компонентов менять не придётся.
 
-export type Open = 'fix' | 'turnL' | 'turnR' | 'tilt' | 'ttL' | 'ttR' | 'slideL' | 'slideR';
+export type Open = 'fix' | 'turnL' | 'turnR' | 'tilt' | 'ttL' | 'ttR' | 'slideL' | 'slideR' | 'slideLR';
 /** L — петли слева, ручка справа; R — наоборот */
 export const OPENS: Open[] = ['turnL', 'turnR', 'tilt', 'ttL', 'ttR', 'fix'];
+/** surma (раздвижное): влево, вправо, в обе стороны, глухое */
+export const SLIDES: Open[] = ['slideL', 'slideR', 'slideLR', 'fix'];
+export const isSlide = (o: Open) => o.startsWith('slide');
 export const isOpenable = (o: Open) => o !== 'fix';
 
 export type Uzor = 'none' | 'v' | 'h' | 'grid' | 'cross';
 export const UZORS: Uzor[] = ['none', 'v', 'h', 'grid', 'cross'];
 
+/** нижняя часть секции под горизонтальным импостом: глухая панель (алюкобонд) или стекло */
+export type Lower = 'panel' | 'glass';
+
 export interface Col {
   /** доля общей ширины */
   f: number;
   open: Open;
-  /** доля высоты снизу под глухую панель (двери, балконный блок), 0 — нет */
+  /** доля высоты снизу под горизонтальным импостом (двери, балконный блок), 0 — нет */
   panel?: number;
-  /** доля высоты: секция занимает только верх (окно балконного блока над панелью) */
+  /** что под импостом: панель (по умолчанию) или стекло */
+  lower?: Lower;
+  /** узор этого стекла; нет — берётся Item.uzor (старые ссылки) */
+  uzor?: Uzor;
 }
 
 export type Cat = 'deraza' | 'eshik' | 'balkon' | 'boshqa';
@@ -78,7 +87,7 @@ export type Lvl = 'ekonom' | 'standart' | 'premium';
 export const LEVELS: Lvl[] = ['ekonom', 'standart', 'premium'];
 /** ДЕМО-коэффициенты уровня, пока нет реальных цен */
 const LVL_K: Record<Lvl, number> = { ekonom: 0.85, standart: 1, premium: 1.25 };
-export const BRANDS = ['Akfa', 'Alpro', 'Alsys', 'Alta Plast', 'Alu Best', 'Alutex', 'Ark', 'Biko', 'Ekopen', 'Innova', 'Lega', 'Neom', 'Retpen', 'Rossen', 'Tayhu', 'Tower Plast', 'Vitrage'];
+export const BRANDS = ['Akfa', 'Alpro', 'Alsys', 'Alta Plast', 'Alu Best', 'Alutex', 'Ark', 'Biko', 'Ekopen', 'Innova', 'Lega', 'Retpen', 'Rossen', 'Tayhu', 'Tower Plast', 'Vitrage'];
 
 // ---- изделие в заказе
 export interface Item {
@@ -91,6 +100,8 @@ export interface Item {
   qty: number;
   /** цвет профиля этого изделия (id из COLORS); нет — берётся общий s.col */
   col?: string | null;
+  /** высота полукруга арки, см (нет — по умолчанию archRise) */
+  archH?: number;
 }
 
 export const newItem = (id: TplId, W?: number, H?: number): Item => {
@@ -128,12 +139,36 @@ export function setCount(it: Item, n: number): Item {
   if (n === it.cols.length) return it;
   const old = it.cols;
   const panel = old[0]?.panel;
+  const lower = old[0]?.lower;
   const cols: Col[] = Array.from({ length: n }, (_, k) => {
     const src = k === 0 ? old[0] : k === n - 1 ? old[old.length - 1] : undefined;
-    return { f: 1 / n, open: src && (k === 0 || k === n - 1) ? src.open : 'fix', ...(panel ? { panel } : {}) };
+    return { f: 1 / n, open: src && (k === 0 || k === n - 1) ? src.open : 'fix', ...(panel ? { panel, ...(lower ? { lower } : {}) } : {}), ...(src?.uzor ? { uzor: src.uzor } : {}) };
   });
   if (n === 1) cols[0].open = old.find((c) => c.open !== 'fix')?.open ?? 'fix';
   return { ...it, W: Math.max(it.W, n * LIMITS.col), cols };
+}
+
+/** узор стекла i */
+export const colUzor = (it: { uzor?: Uzor; cols: Col[] }, i: number): Uzor => it.cols[i]?.uzor ?? it.uzor ?? 'none';
+
+/** высота полукруга арки, см: своя или по умолчанию (половина ширины, не больше 60% высоты) */
+export const archRise = (it: { W: number; H: number; archH?: number }) =>
+  clamp(Math.round(it.archH ?? Math.min(it.W / 2, it.H * 0.6)), 10, archMax(it));
+export const archMax = (it: { W: number; H: number }) => Math.max(10, Math.min(it.W, it.H - 30));
+
+/** нижняя часть секции i: доля высоты; cm → доля */
+export const LOWER_MIN = 10;
+export function setLower(it: Item, i: number, kind: Lower | null, cm?: number): Item {
+  return {
+    ...it,
+    cols: it.cols.map((c, k) => {
+      if (k !== i) return c;
+      if (!kind) { const { panel: _p, lower: _l, ...rest } = c; return rest; }
+      const cur = c.panel ? c.panel * it.H : Math.min(90, it.H * 0.4);
+      const h = clamp(Math.round(cm ?? cur), LOWER_MIN, Math.max(LOWER_MIN, it.H - 30));
+      return { ...c, panel: h / it.H, lower: kind };
+    }),
+  };
 }
 
 export const area = (it: Pick<Item, 'W' | 'H'>) => (it.W * it.H) / 10000;
