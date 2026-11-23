@@ -25,7 +25,8 @@ export interface MasterRequest {
   /** состояние макета (та же строка, что в ссылке-поделиться) */
   layout: string;
   lang: string;
-  priceUzs: string;
+  /** демо-сайт для мастеров; на сайте для граждан цена не показывается и не передаётся */
+  priceUzs?: string;
   /** UTM из рекламы (utm_source, utm_campaign …) */
   utm?: Record<string, string>;
 }

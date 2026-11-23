@@ -1,17 +1,16 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { LINKS, type Lang } from '@/lib/i18n';
+import type { Lang } from '@/lib/i18n';
 import { cdict, type CDict } from '@/lib/citizen/i18n';
-import { BRANDS, MAIN_TYPES, fmt, shapeOf, tpl, type TplId } from '@/lib/citizen/model';
+import { BRANDS, MAIN_TYPES, area, fmtArea, shapeOf, tpl, type TplId } from '@/lib/citizen/model';
 import { captureUtm, track } from '@/lib/analytics';
 import WindowDrawing from './WindowDrawing';
 import HeroWindow from './HeroWindow';
-import { AppTeaser, Socials } from './AppLinks';
+import { Socials } from './AppLinks';
 import { Balls, LangSwitch, Logo, ThemeToggle, useDark, useMedia } from './ui';
 
 const HERO_H = 140;
-const heroPrice = (W: number) => Math.round((((W * HERO_H) / 10000) * 2140000) / 50000) * 50000;
 /** размеры плиток на главной (px), как в макете */
 const TILE_PX: Record<string, [number, number]> = { d1: [42, 76], d2: [78, 82], d3: [96, 88], bb: [92, 92], es: [44, 96], ar: [72, 92] };
 
@@ -20,7 +19,6 @@ export default function Main({ lang }: { lang: Lang }) {
   const [W, setW] = useState(130);
   const dark = useDark();
   const isDesk = useMedia('(min-width: 1024px)'); // 3D рисуем только в видимой версии hero
-  const price = fmt(heroPrice(W));
   const base = `/${lang}/maket/`;
   useEffect(() => { captureUtm(); track('ViewContent', { page: 'main' }); }, []);
 
@@ -34,13 +32,9 @@ export default function Main({ lang }: { lang: Lang }) {
           : [{ c: 'b', s: 56, style: { left: '5%', top: '8%' }, f: 2 }, { c: 'y', s: 30, style: { left: '7%', top: '58%' } }, { c: 'b', s: 18, style: { right: '40%', top: '3%' }, f: 3 }, { c: 'y', s: 16, style: { right: '22%', bottom: '4%' }, f: 2 }]} />
         <HeroWindow W={W} H={HERO_H} w={w} h={h} dark={dark} live={big === isDesk}
           fallback={<WindowDrawing shape={{ ...shapeOf(tpl('d2')), W, H: HERO_H }} w={w} h={h} dark={dark} labels swing title={`${t.tpl.d2}, ${W} × ${HERO_H} ${t.cm}`} />} />
-        <div className="rc-fcard rc-pop rc-price rc-shine" style={{ ['--r' as string]: '-6deg', ['--d' as string]: '1.1s', right: '3%', top: big ? '8%' : '1%' }}>
-          <div style={{ fontSize: big ? 13 : 11.5, fontWeight: 700, letterSpacing: '.06em', color: '#5A3D00' }}>{t.approx}</div>
-          <div className="rc-disp rc-num" style={{ fontSize: big ? 30 : 21, lineHeight: 1.15 }} aria-live="polite">{price} <span style={{ fontSize: big ? 15 : 12 }}>{t.sum}</span></div>
-        </div>
         <div className="rc-fcard rc-pop alt flex items-center gap-2" style={{ ['--r' as string]: '5deg', ['--d' as string]: '1.3s', right: '3%', bottom: '10%' }}>
           <span style={{ width: 10, height: 10, borderRadius: 3, background: '#0077FF' }} />
-          <span className="rc-disp rc-num" style={{ fontSize: big ? 20 : 17 }}>{W} × {HERO_H} {t.cm}</span>
+          <span className="rc-disp rc-num" style={{ fontSize: big ? 20 : 17 }}>{W} × {HERO_H} {t.cm} · {fmtArea(area({ W, H: HERO_H }))} m²</span>
         </div>
         <div className="rc-fcard rc-pop flex items-center gap-2" style={{ ['--r' as string]: '-4deg', ['--d' as string]: '1.5s', left: '3%', bottom: '6%', padding: '8px 12px 8px 8px' }}>
           <span style={{ width: 28, height: 28, borderRadius: '50%', backgroundImage: 'url(/colors/c01.webp)', backgroundSize: '120px auto', boxShadow: 'inset 0 0 0 2px #fff,0 0 0 1px #D6DCE6' }} />
@@ -76,7 +70,6 @@ export default function Main({ lang }: { lang: Lang }) {
       <header className="rc-wrap relative z-10 flex items-center justify-between" style={{ paddingTop: 14, paddingBottom: 4 }}>
         <Logo lang={lang} />
         <div className="flex items-center gap-4">
-          <a href={LINKS.romchi} target="_blank" rel="noopener noreferrer" data-track="masters_link" data-from="header" className="hidden md:inline" style={{ color: 'var(--ink)', fontWeight: 600, fontSize: 15 }}>{t.forMastersShort}</a>
           <LangSwitch lang={lang} label={t.lang} />
           <ThemeToggle label={t.theme} />
         </div>
@@ -118,8 +111,6 @@ export default function Main({ lang }: { lang: Lang }) {
           <p className="rc-hint" style={{ textAlign: 'center', fontWeight: 600, margin: '6px 0 0' }}>{t.trust}</p>
         </section>
 
-        <AppTeaser t={t} />
-
         <div style={{ marginTop: 40 }} aria-hidden="true">
           <div className="rc-marq-band">
             <div className="rc-marq">
@@ -143,7 +134,6 @@ export default function Main({ lang }: { lang: Lang }) {
 
       <footer style={{ background: '#0B1530', color: '#fff', marginTop: 12 }}>
         <div className="rc-wrap flex flex-col items-center gap-3 md:flex-row md:justify-between" style={{ paddingTop: 22, paddingBottom: 22 }}>
-          <a href={LINKS.romchi} target="_blank" rel="noopener noreferrer" data-track="masters_link" data-from="footer" style={{ color: '#fff', fontWeight: 600, fontSize: 15 }}>{t.forMasters} ›</a>
           <Socials t={t} from="footer" onDark />
           <span style={{ color: '#A9B4C8', fontSize: 13 }}>© 2026 Romchi · {t.slogan}</span>
         </div>

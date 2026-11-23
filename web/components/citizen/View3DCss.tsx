@@ -6,7 +6,6 @@ import type { CDict } from '@/lib/citizen/i18n';
 import type { Item } from '@/lib/citizen/model';
 import WindowDrawing, { fit } from './WindowDrawing';
 import { I, useDark } from './ui';
-import { StoreButtons } from './AppLinks';
 
 export default function View3DCss({ t, item, col, onClose }: { t: CDict; item: Item; col: string | null; onClose: () => void }) {
   const dark = useDark();
@@ -51,7 +50,6 @@ export default function View3DCss({ t, item, col, onClose }: { t: CDict; item: I
         </div>
         <input type="range" min={-70} max={70} value={Math.round(rot)} onChange={(e) => setRot(Number(e.target.value))} aria-label={t.m3dTitle} style={{ width: '100%', accentColor: '#0077FF', height: 32 }} />
         <p className="rc-hint" style={{ margin: 0 }}>{t.m3dHint}</p>
-        <StoreButtons t={t} from="3d" />
       </div>
     </div>
   );

@@ -4,7 +4,6 @@ import type { CDict } from '@/lib/citizen/i18n';
 import type { Item } from '@/lib/citizen/model';
 import WindowScene, { hasTilt, hasTurn, modesFor, nextMode, type Cmd, type Mode } from './WindowScene';
 import { I, useDark, useMedia } from './ui';
-import { StoreButtons } from './AppLinks';
 
 export default function View3DGL({ t, item, col, onClose }: { t: CDict; item: Item; col: string | null; onClose: () => void }) {
   const dark = useDark();
@@ -54,7 +53,6 @@ export default function View3DGL({ t, item, col, onClose }: { t: CDict; item: It
           <button type="button" className="rc-ghost" onClick={() => { setResetKey((k) => k + 1); setRotate(false); }}>{t.m3dReset}</button>
         </div>
         <p className="rc-hint" style={{ margin: 0 }}>{t.m3dHint}</p>
-        <StoreButtons t={t} from="3d" />
       </div>
     </div>
   );

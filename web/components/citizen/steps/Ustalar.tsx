@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { REGIONS, getMasters, sendToMasters, type Master } from '@/lib/masters';
-import { fmt, total } from '@/lib/citizen/model';
 import { encodeShare } from '@/lib/citizen/store';
 import { track } from '@/lib/analytics';
 import { I } from '../ui';
@@ -46,8 +45,7 @@ export default function Ustalar({ t, lang, s, set, go }: StepProps) {
     if (!phoneOk || !picked.length) return;
     setState('sending');
     try {
-      const priceUzs = fmt(total(s.items, { lvl: s.lvl }));
-      const r = await sendToMasters({ districtId: district.id, masterIds: picked, phone: `+998${phone.digits}`, layout: encodeShare(s), lang, priceUzs, utm: utm() });
+      const r = await sendToMasters({ districtId: district.id, masterIds: picked, phone: `+998${phone.digits}`, layout: encodeShare(s), lang, utm: utm() });
       track('Lead', { district: district.id, masters: picked.length, demo: r === 'demo' });
       set((st) => ({ ...st, sent: { date: new Date().toISOString(), demo: r === 'demo', masters: picked.length } }));
       go('tayyor');

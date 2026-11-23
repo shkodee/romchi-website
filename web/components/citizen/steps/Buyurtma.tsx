@@ -1,5 +1,5 @@
 'use client';
-import { area, fmt, fmtArea, priceOf, total } from '@/lib/citizen/model';
+import { area, fmtArea } from '@/lib/citizen/model';
 import WindowDrawing from '../WindowDrawing';
 import { itemCol } from '@/lib/citizen/store';
 import { I, Stepper, useDark } from '../ui';
@@ -9,7 +9,6 @@ export default function Buyurtma({ t, s, set, go }: StepProps) {
   const dark = useDark();
   const n = s.items.reduce((a, x) => a + x.qty, 0);
   const m2 = s.items.reduce((a, x) => a + area(x) * x.qty, 0);
-  const sum = total(s.items, { lvl: s.lvl });
 
   if (!s.items.length) {
     return (
@@ -45,7 +44,7 @@ export default function Buyurtma({ t, s, set, go }: StepProps) {
                 </div>
                 <div className="flex items-center justify-between gap-2">
                   <Stepper value={it.qty} onChange={(q) => set((st) => ({ ...st, items: st.items.map((x) => (x.id === it.id ? { ...x, qty: q } : x)) }))} labels={{ less: t.less, more: t.more, qty: t.qty }} />
-                  <b className="rc-num" style={{ fontSize: 16 }}>{fmt(priceOf(it, { lvl: s.lvl }) * it.qty)}</b>
+                  <b className="rc-num" style={{ fontSize: 16 }}>{fmtArea(area(it) * it.qty)} m²</b>
                 </div>
               </div>
             </li>
@@ -58,10 +57,6 @@ export default function Buyurtma({ t, s, set, go }: StepProps) {
       </div>
       <div className="rc-sheet rc-bottom" style={{ animation: 'none' }}>
         <div className="flex flex-col gap-3" style={{ maxWidth: 608, margin: '0 auto' }}>
-          <div>
-            <div style={{ fontSize: 12.5, fontWeight: 700, letterSpacing: '.06em', color: 'var(--mute)' }}>{t.totalApprox}</div>
-            <div className="rc-disp rc-num" style={{ fontSize: 26 }}>{fmt(sum)} <span style={{ fontSize: 15, fontFamily: 'Onest Variable' }}>{t.sum}</span></div>
-          </div>
           <button type="button" className="rc-cta" onClick={() => go('rang')}>{t.toColor} {I.arrow()}</button>
         </div>
       </div>

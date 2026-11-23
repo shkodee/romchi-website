@@ -1,9 +1,7 @@
 'use client';
 import { useMemo } from 'react';
 import { REGIONS } from '@/lib/masters';
-import { fmt, total } from '@/lib/citizen/model';
 import { colorSummary, itemCol } from '@/lib/citizen/store';
-import { LINKS } from '@/lib/i18n';
 import WindowDrawing from '../WindowDrawing';
 import { I, LangSwitch, Logo, useDark } from '../ui';
 import { Socials } from '../AppLinks';
@@ -63,10 +61,6 @@ export default function Tayyor({ t, lang, s, set, go }: StepProps) {
                   <dt style={{ color: 'var(--ink2)' }}>{k}</dt><dd className="m-0" style={{ fontWeight: 700, textAlign: 'right' }}>{v}</dd>
                 </div>
               ))}
-              <div className="flex items-baseline justify-between gap-3" style={{ paddingTop: 10 }}>
-                <dt style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink2)' }}>{t.approx.charAt(0) + t.approx.slice(1).toLowerCase()}</dt>
-                <dd className="rc-disp rc-num m-0" style={{ fontSize: 18, whiteSpace: 'nowrap' }}>≈ {fmt(total(s.items, { lvl: s.lvl }))} {t.sum}</dd>
-              </div>
             </dl>
             <div aria-hidden="true" className="rc-stamp absolute" style={{ right: 18, top: 70, border: '3px solid #1F9D5B', color: '#1F9D5B', borderRadius: 10, padding: '4px 10px', fontWeight: 800, fontSize: 18, letterSpacing: '.08em', background: 'rgba(255,255,255,.6)' }}>{t.stamp}</div>
           </div>
@@ -85,10 +79,6 @@ export default function Tayyor({ t, lang, s, set, go }: StepProps) {
           <h1 className="rc-disp" style={{ margin: 0, fontSize: 26 }}>{t.doneT}</h1>
           <p style={{ margin: 0, fontSize: 16, lineHeight: 1.5, color: 'var(--ink2)' }}>{t.doneS}</p>
           {s.sent.demo && <p className="rc-note" style={{ margin: '4px 0 0' }}>{t.doneDemo}</p>}
-        </div>
-        <div className="grid grid-cols-2 gap-2.5">
-          <a href={LINKS.appStore} className="rc-dark-btn" data-track="download_click" data-store="app_store" data-from="tayyor">{I.apple()} App Store</a>
-          <a href={LINKS.googlePlay} className="rc-dark-btn" data-track="download_click" data-store="google_play" data-from="tayyor">{I.play()} Google Play</a>
         </div>
         <div className="flex flex-col items-center gap-2">
           <span className="rc-hint" style={{ fontWeight: 600 }}>{t.social}</span>

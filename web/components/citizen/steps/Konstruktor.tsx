@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import {
-  LIMITS, LOWER_MIN, OPENS, QUICK, SLIDES, UZORS, archMax, archRise, area, colUzor, colWidths, equalize, fmt, fmtArea, isOpenable, newItem, priceOf,
+  LIMITS, LOWER_MIN, OPENS, QUICK, SLIDES, UZORS, archMax, archRise, area, colUzor, colWidths, equalize, fmtArea, isOpenable, newItem,
   setColW, setCount, setH, setLower, setW, tpl, type Item, type Lower, type Open, type Uzor,
 } from '@/lib/citizen/model';
 import { clamp } from '@/lib/citizen/model';
@@ -9,7 +9,6 @@ import { itemCol } from '@/lib/citizen/store';
 import { track } from '@/lib/analytics';
 import WindowDrawing, { fit, geometry } from '../WindowDrawing';
 import View3D from '../View3D';
-import { AppChip } from '../AppLinks';
 import { I, Stepper, useDark, useMedia } from '../ui';
 import type { StepProps } from '../Flow';
 
@@ -137,7 +136,6 @@ export default function Konstruktor({ t, s, set, go, notify }: StepProps) {
   const h = fitted.h;
   const g = geometry(draft, w, h);
   const ws = colWidths(draft);
-  const price = priceOf(draft, { lvl: s.lvl }) * draft.qty;
 
   // ---- ручки на концах размерных линий: тянем — размер меняется сразу. Каждое движение подтягивает край окна к пальцу
   // (так ручка идёт за пальцем при любой раскладке, а когда чертёж упёрся в рамку и масштаб уменьшается — размер растёт плавно до 1000 см)
@@ -345,10 +343,10 @@ export default function Konstruktor({ t, s, set, go, notify }: StepProps) {
     </>
   );
 
-  const priceLine = (
+  const areaLine = (
     <div>
-      <div style={{ fontSize: 12.5, fontWeight: 700, letterSpacing: '.06em', color: 'var(--mute)' }}>{t.approx} · {fmtArea(area(draft))} m²</div>
-      <div className="rc-disp rc-num" style={{ fontSize: 22, whiteSpace: 'nowrap' }} aria-live="polite">{fmt(price)} <span style={{ fontSize: 13, fontFamily: 'Onest Variable' }}>{t.sum}</span></div>
+      <div style={{ fontSize: 12.5, fontWeight: 700, letterSpacing: '.06em', color: 'var(--mute)' }}>{t.areaLbl}</div>
+      <div className="rc-disp rc-num" style={{ fontSize: 22, whiteSpace: 'nowrap' }} aria-live="polite">{fmtArea(area(draft) * draft.qty)} <span style={{ fontSize: 13, fontFamily: 'Onest Variable' }}>m²</span></div>
     </div>
   );
   const qtyRow = (
@@ -357,11 +355,11 @@ export default function Konstruktor({ t, s, set, go, notify }: StepProps) {
       <button type="button" className="rc-ghost flex-1" onClick={() => { commit(); notify(t.added); go('turi'); }}>+ {t.addToOrder}</button>
     </div>
   );
-  const priceBlock = (
+  const areaBlock = (
     <div className="flex flex-col gap-3">
       <div>
-        <div style={{ fontSize: 12.5, fontWeight: 700, letterSpacing: '.06em', color: 'var(--mute)' }}>{t.approx} · {fmtArea(area(draft))} m²</div>
-        <div className="rc-disp rc-num" style={{ fontSize: 24 }} aria-live="polite">{fmt(price)} <span style={{ fontSize: 14, fontFamily: 'Onest Variable' }}>{t.sum}</span></div>
+        <div style={{ fontSize: 12.5, fontWeight: 700, letterSpacing: '.06em', color: 'var(--mute)' }}>{t.areaLbl}</div>
+        <div className="rc-disp rc-num" style={{ fontSize: 24 }} aria-live="polite">{fmtArea(area(draft) * draft.qty)} <span style={{ fontSize: 14, fontFamily: 'Onest Variable' }}>m²</span></div>
       </div>
       <div className="flex gap-2.5">
         <Stepper value={draft.qty} onChange={(q) => set((st) => ({ ...st, draft: { ...(st.draft ?? draft), qty: q } }))} labels={{ less: t.less, more: t.more, qty: t.qty }} />
@@ -387,10 +385,9 @@ export default function Konstruktor({ t, s, set, go, notify }: StepProps) {
           {tabs}
           {tabBody}
           {sizes}
-          <AppChip t={t} />
           {qtyRow}
           <div className="rc-bottom flex items-center gap-3" style={{ margin: '0 -16px', paddingTop: 12 }}>
-            <div className="min-w-0 flex-1">{priceLine}</div>
+            <div className="min-w-0 flex-1">{areaLine}</div>
             <button type="button" className="rc-cta" style={{ width: 'auto', flex: 'none', padding: '0 18px', fontSize: 17 }} onClick={() => { commit(); go('buyurtma'); }}>{t.next} {I.arrow(20)}</button>
           </div>
         </div>
@@ -405,8 +402,7 @@ export default function Konstruktor({ t, s, set, go, notify }: StepProps) {
           {tabBody}
           {sizes}
           {info}
-          <AppChip t={t} />
-          <div style={{ marginTop: 'auto' }}>{priceBlock}</div>
+          <div style={{ marginTop: 'auto' }}>{areaBlock}</div>
         </div>
       </div>
       )}
