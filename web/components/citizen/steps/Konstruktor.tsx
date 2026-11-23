@@ -4,6 +4,7 @@ import {
   LIMITS, LOWER_MIN, OPENS, QUICK, SLIDES, UZORS, archMax, archRise, area, colUzor, colWidths, equalize, fmt, fmtArea, isOpenable, newItem, priceOf,
   setColW, setCount, setH, setLower, setW, tpl, type Item, type Lower, type Open, type Uzor,
 } from '@/lib/citizen/model';
+import { clamp } from '@/lib/citizen/model';
 import { itemCol } from '@/lib/citizen/store';
 import { track } from '@/lib/analytics';
 import WindowDrawing, { fit, geometry } from '../WindowDrawing';
@@ -13,7 +14,7 @@ import { I, Stepper, useDark, useMedia } from '../ui';
 import type { StepProps } from '../Flow';
 
 type Tab = 'bolish' | 'ochilish' | 'uzor';
-type Edit = { k: 'W' | 'H' } | { k: 'col'; i: number } | null;
+type Edit = { k: 'W' | 'H' | 'A' } | { k: 'col'; i: number } | null;
 
 /** маленькие иконки типов открывания (как в приложении) */
 export function OpenIcon({ o, s = 30 }: { o: Open; s?: number }) {
@@ -103,7 +104,7 @@ export default function Konstruktor({ t, s, set, go, notify }: StepProps) {
   const [edit, setEdit] = useState<Edit>(null);
   const [show3d, setShow3d] = useState(false);
   const winRef = useRef<HTMLDivElement>(null); // чертёж с размерами: реальный край окна на экране
-  const drag = useRef<{ axis: 'W' | 'H'; dx: number; dy: number; moved: boolean } | null>(null);
+  const drag = useRef<{ axis: 'W' | 'H' | 'A'; dx: number; dy: number; moved: boolean } | null>(null);
   const [boxRef, boxW] = useBox<HTMLDivElement>();
 
   const upd = (fn: (d: Item) => Item) => {
@@ -140,18 +141,24 @@ export default function Konstruktor({ t, s, set, go, notify }: StepProps) {
 
   // ---- ручки на концах размерных линий: тянем — размер меняется сразу. Каждое движение подтягивает край окна к пальцу
   // (так ручка идёт за пальцем при любой раскладке, а когда чертёж упёрся в рамку и масштаб уменьшается — размер растёт плавно до 1000 см)
-  const startDrag = (axis: 'W' | 'H') => (e: React.PointerEvent<HTMLElement>) => {
+  const startDrag = (axis: 'W' | 'H' | 'A') => (e: React.PointerEvent<HTMLElement>) => {
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
     const r = winRef.current?.getBoundingClientRect();
     // смещение пальца от края окна: ручка не «прыгает» под палец
-    drag.current = { axis, dx: r ? e.clientX - r.right : 0, dy: r ? e.clientY - r.bottom : 0, moved: false };
+    // высота арки меряется от верха окна до линии пят арки, остальные размеры — от нижнего/правого края
+    drag.current = { axis, dx: r ? e.clientX - r.right : 0, dy: r ? e.clientY - (axis === 'A' ? r.top + g.archR : r.bottom) : 0, moved: false };
   };
   const moveDrag = (e: React.PointerEvent<HTMLElement>) => {
     const d = drag.current;
     const r = winRef.current?.getBoundingClientRect();
     if (!d || !r || !fitted.k) return;
     if (!d.moved) { d.moved = true; setHist((hh) => [...hh.slice(-29), draft]); }
+    if (d.axis === 'A') {
+      const cmA = archRise(draft) + Math.max(-6, Math.min(6, (e.clientY - d.dy - (r.top + g.archR)) / fitted.k));
+      set((st) => { const dr = st.draft ?? draft; return { ...st, draft: { ...dr, archH: clamp(Math.round(cmA), 10, archMax(dr)) } }; });
+      return;
+    }
     const err = d.axis === 'W' ? e.clientX - d.dx - r.right : e.clientY - d.dy - r.bottom; // px до пальца
     const size = d.axis === 'W' ? draft.W : draft.H;
     const lim = Math.max(2, Math.round(size * 0.04)); // не больше ~4% за событие: без рывков у больших размеров
@@ -165,6 +172,13 @@ export default function Konstruktor({ t, s, set, go, notify }: StepProps) {
     e.preventDefault();
     const stp = e.shiftKey ? 10 : 1;
     upd((d) => (axis === 'W' ? setW(d, d.W + inc * stp) : setH(d, d.H + inc * stp)));
+  };
+  const keyArch = (e: React.KeyboardEvent) => {
+    const inc = e.key === 'ArrowDown' || e.key === 'ArrowRight' ? 1 : e.key === 'ArrowUp' || e.key === 'ArrowLeft' ? -1 : 0;
+    if (!inc) return;
+    e.preventDefault();
+    const stp = e.shiftKey ? 10 : 1;
+    upd((d) => ({ ...d, archH: clamp(archRise(d) + inc * stp, 10, archMax(d)) }));
   };
   const minW = Math.max(LIMITS.W[0], draft.cols.length * LIMITS.col);
 
@@ -204,6 +218,16 @@ export default function Konstruktor({ t, s, set, go, notify }: StepProps) {
       {draft.cols.length > 1 && g.secs[selI] && (
         <div aria-hidden="true" className="pointer-events-none absolute" style={{ left: g.secs[selI].x - 2, top: g.secs[selI].y - 2, width: g.secs[selI].w + 4, height: g.secs[selI].h + 4, border: '3px solid #FFC529', borderRadius: 4, boxShadow: '0 0 0 3px rgba(255,197,41,.3)' }} />
       )}
+      {/* слева: высота арки (отдельный размер верхней части) */}
+      {isArch && g.archR > 0 && (<>
+        <svg className="absolute" style={{ left: -24, top: 0, overflow: 'visible' }} width={16} height={g.archR} aria-hidden="true">
+          <path d={`M0 0 H22 M0 ${g.archR} H22`} className="rc-ext" />
+          <path d={`M0 1 V${g.archR - 1} M-4 8 L0 1 L4 8 M-4 ${g.archR - 8} L0 ${g.archR - 1} L4 ${g.archR - 8}`} className="rc-dim" />
+        </svg>
+        <button type="button" className="rc-pill rc-num absolute" style={{ left: -24, top: g.archR / 2, transform: 'translate(-50%,-50%)' }} onClick={() => setEdit({ k: 'A' })} aria-label={`${t.archH}: ${archRise(draft)} ${t.cm}`}>{archRise(draft)}</button>
+        <div role="slider" tabIndex={0} aria-orientation="vertical" aria-label={t.archH} aria-valuemin={10} aria-valuemax={archMax(draft)} aria-valuenow={archRise(draft)} aria-valuetext={`${archRise(draft)} ${t.cm}`}
+          className="rc-grip" style={{ left: -24, top: g.archR, cursor: 'ns-resize' }} onPointerDown={startDrag('A')} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag} onKeyDown={keyArch} />
+      </>)}
       {/* справа: высота */}
       <svg className="absolute" style={{ left: w + 22, top: 0, overflow: 'visible' }} width={16} height={h} aria-hidden="true">
         <path d={`M-22 0 H4 M-22 ${h} H4`} className="rc-ext" />
@@ -389,12 +413,12 @@ export default function Konstruktor({ t, s, set, go, notify }: StepProps) {
 
       {edit && (
         <EditDialog t={t}
-          label={edit.k === 'col' ? t.secW(edit.i + 1) : edit.k === 'W' ? t.eni : t.boyi}
-          value={edit.k === 'col' ? ws[edit.i] : edit.k === 'W' ? draft.W : draft.H}
+          label={edit.k === 'col' ? t.secW(edit.i + 1) : edit.k === 'W' ? t.eni : edit.k === 'A' ? t.archH : t.boyi}
+          value={edit.k === 'col' ? ws[edit.i] : edit.k === 'W' ? draft.W : edit.k === 'A' ? archRise(draft) : draft.H}
           onClose={() => setEdit(null)}
           onSave={(n) => {
             const e = edit;
-            upd((d) => (e.k === 'col' ? setColW(d, e.i, n) : e.k === 'W' ? setW(d, n) : setH(d, n)));
+            upd((d) => (e.k === 'col' ? setColW(d, e.i, n) : e.k === 'W' ? setW(d, n) : e.k === 'A' ? { ...d, archH: clamp(n, 10, archMax(d)) } : setH(d, n)));
             setEdit(null);
           }} />
       )}
